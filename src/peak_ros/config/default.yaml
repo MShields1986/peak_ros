@@ -1,0 +1,47 @@
+peak_address:    "10.1.1.2"
+peak_port:             1067
+
+acquisition_rate:        20
+digitisation_rate:      100 # 0, 10, 25, 50 or 100 (0 = use default)
+frame_id: "ltpa"
+
+profile:              false     # Profiling output for PeakNodelet::takeMeasurement()
+
+boundary_conditions:
+  n_elements:            61     # Actually number of focal laws
+  element_pitch:          0.8   # mm
+  inter_element_spacing:  0.1   # mm
+  element_width:         10.0   # mm
+  vel_wedge:           2430.0   # m/s
+
+  vel_couplant:        1500.0   # m/s Water
+
+#  vel_material:        5000.0   # m/s Steel
+#  vel_material:        6420.0   # m/s Aluminium
+  vel_material:        2940.0   # m/s CF
+
+  wedge_angle:            0.0   # degrees
+  wedge_depth:            0.0   # mm
+  couplant_depth:         1.0   # mm
+  specimen_depth:        65.00  # mm
+
+tcg:
+  use_tcg:             true
+  # Amplify by tcg_n dB every tcg_l mm up to a maximum of tcg_limit normalised amplitude
+  amp_factor:             1.5   # dB
+  depth_factor:           1.5   # mm
+  tcg_limit:              0.7
+
+gates:
+  gate_front_wall:        0.2   # 0 to 1
+  depth_to_skip:          6.5   # mm
+  gate_back_wall:         0.7   # 0 to 1
+  max_depth:             17.0   # mm
+  zero_to_front_wall:  true     # Sets the gated B Scan to start at the detected frontwall
+  show_front_wall:    false     # Show front wall in the gated B Scan
+
+reconstruction:
+  process_rate:          20 # Hz - Consider interplay between this and acquisition rates
+  use_tf:              true
+  recon_frame_id: "pcl_crop_box_2"
+  live_publish:        true

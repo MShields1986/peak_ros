@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<launch>
+    <arg name="configuration" default="offline.yaml" />
+
+    <!-- <arg name="ros_bag" default="peak_recording_2025-05-20-17-03-45.bag" /> -->
+    <!-- <arg name="ros_bag" default="peak_recording_2025-05-30-17-00-57.bag" /> -->
+    <!-- Full scan alternating -->
+    <arg name="ros_bag" default="peak_recording_2025-06-09-15-55-57.bag" />
+    <!-- Full scan non-alternating -->
+    <!-- <arg name="ros_bag" default="peak_recording_2025-06-06-12-59-50.bag" /> -->
+
+    <arg name="export_pcd" default="false" />
+    <arg name="logging" default="false" />
+    <arg name="rosbag_name" default="peak_recording" />
+
+    <arg name="rviz" default="true" />
+
+    <group ns="peak">
+        <!-- Configuration -->
+        <group ns="settings">
+            <rosparam file="$(find peak_ros)/config/$(arg configuration)" command="load" />
+        </group>
+
+
+        <node pkg="rosbag" type="play" name="rosbag_peak_play" args="$(find peak_ros)/bags/$(arg ros_bag) --topics /peak/b_scan /peak/gated_b_scan" />
+
+
+        <!-- Nodelet Manager -->
+        <node pkg="nodelet" type="nodelet" name="peak_nodelet_manager" args="manager" output="screen" >
+            <param name="num_worker_threads" value="15" />
+        </node>
+
+
+        <!-- Voxel Nodelet
+             Threads:
+                1 subscriber
+                1 publisher
+                1 spin 
+            -->
+       <node pkg="nodelet" type="nodelet" name="voxel_grid" args="load pcl/VoxelGrid peak_nodelet_manager" output="screen">
+            <remap from="~input" to="gated_b_scan" />
+            <remap from="~output" to="voxelised_gated_b_scan" />
+            <rosparam>
+            filter_field_name: z
+            filter_limit_min: 0.0001
+            filter_limit_max: 0.05
+            filter_limit_negative: False
+            leaf_size: 0.0001
+            </rosparam>
+            <!-- leaf_size: 0.00005 -->
+        </node>
+
+
+        <!-- Reconstruction Nodelet
+             Threads:
+                1 subscriber
+                1 publisher
+                1 spin 
+            -->
+        <node pkg="nodelet" type="nodelet" name="reconstruction_nodelet" 
+              args="load peak_ros/reconstruction_nodelet peak_nodelet_manager" output="screen">
+            <remap from="input" to="voxelised_gated_b_scan" />
+            <remap from="output" to="detections" />
+        </node>
+
+
+        <!-- PCD Exporter -->
+        <node pkg="pcl_ros" type="pointcloud_to_pcd" name="peak_pointcloud_to_pcd" args="input:=/peak/detections _prefix:=$(find peak_ros)/bags/pp_full_" if="$(arg export_pcd)" />
+
+
+        <!-- Logging -->
+        <node pkg="rosbag" type="record" name="rosbag_peak" args="record --repeat-latched -b 1024 -o $(find peak_ros)/bags/$(arg rosbag_name) /tf /peak/a_scans /peak/b_scan /peak/gated_b_scan /peak/detections /iiwa/state/CartesianWrench" if="$(arg logging)" />
+        
+    </group>
+
+    <!-- Rviz -->
+    <node pkg="rviz" type="rviz" name="rviz_peak" args="-d $(find peak_ros)/config/bscan.rviz" if="$(arg rviz)" />
+
+</launch>

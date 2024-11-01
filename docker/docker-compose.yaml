@@ -1,0 +1,35 @@
+name: peak-ros
+
+services:
+  peak-ros:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+      target: base
+      args:
+        - CATKIN_WORKSPACE_DIR=${CATKIN_WORKSPACE_DIR}
+    #deploy:
+    #  resources:
+    #    limits:
+    #      cpus: '0.001'
+    #      memory: 500M
+    #    reservations:
+    #      cpus: '0.0001'
+    #      memory: 100M
+    network_mode: host
+    ipc: host
+    privileged: true
+    environment:
+      - DISPLAY
+      - 'CATKIN_WORKSPACE_DIR=${CATKIN_WORKSPACE_DIR}'
+      - 'ROS_MASTER_URI=${ROS_MASTER_URI}'
+      - 'ROS_HOSTNAME=${ROS_HOSTNAME}'
+      #- 'ROS_IP=${ROS_IP}
+    #extra_hosts:
+      #- "ETC_HOSTNAME_1:ETC_HOST_IP_1"
+    volumes:
+      - $XAUTHORITY:/root/.Xauthority
+      - ../src:${CATKIN_WORKSPACE_DIR}/src
+    #command: sleep infinity
+    command: roslaunch peak_ros init.launch
+    #restart: unless-stopped

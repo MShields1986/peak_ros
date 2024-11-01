@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<launch>
+    <!-- <arg name="configuration" default="default.yaml" /> -->
+    <!-- <arg name="configuration" default="roller_probe_50_MHz.yaml" /> -->
+    <arg name="configuration" default="roller_probe_100_MHz.yaml" />
+    <!-- <arg name="configuration" default="beccas.yaml" /> -->
+
+    <!-- <arg name="mps_file" default="composite_roller_probe/roller_probe_wing_cover_50_MHz.mps" /> -->
+    <arg name="mps_file" default="composite_roller_probe/roller_probe_wing_cover_100_MHz.mps" />
+    <!-- <arg name="mps_file" default="beccas.mps" /> -->
+
+    <arg name="export_pcd" default="false" />
+    <arg name="logging" default="false" />
+    <arg name="rosbag_name" default="peak_recording" />
+
+    <arg name="rviz" default="true" />
+
+
+    <group ns="peak">
+        <!-- Configuration -->
+        <group ns="settings">
+            <param name="mps_file" type="string" value="$(arg mps_file)" />
+            <rosparam file="$(find peak_ros)/config/$(arg configuration)" command="load" />
+        </group>
+
+
+        <!-- Nodelet Manager -->
+        <node pkg="nodelet" type="nodelet" name="peak_nodelet_manager" args="manager" output="screen" >
+            <param name="num_worker_threads" value="15" />
+        </node>
+
+
+        <!-- Launch Peak LTPA Nodelet
+             Threads:
+                2 services
+                2 publishers
+                1 spin (1 TCP connections which will need dedicated threads outside of nodelet pool) 
+            -->
+        <node pkg="nodelet" type="nodelet" name="peak_ros_nodelet" 
+              args="load peak_ros/peak_nodelet peak_nodelet_manager">
+        </node>
+
+
+        <!-- Voxel Nodelet
+             Threads:
+                1 subscriber
+                1 publisher
+                1 spin 
+            -->
+       <node pkg="nodelet" type="nodelet" name="voxel_grid" args="load pcl/VoxelGrid peak_nodelet_manager" output="screen">
+            <remap from="~input" to="gated_b_scan" />
+            <remap from="~output" to="voxelised_gated_b_scan" />
+            <rosparam>
+            filter_field_name: z
+            filter_limit_min: 0.0001
+            filter_limit_max: 0.05
+            filter_limit_negative: False
+            leaf_size: 0.0001
+            </rosparam>
+            <!-- leaf_size: 0.00005 -->
+        </node>
+
+
+        <!-- Reconstruction Nodelet
+             Threads:
+                1 subscriber
+                1 publisher
+                1 spin 
+            -->
+        <node pkg="nodelet" type="nodelet" name="reconstruction_nodelet" 
+              args="load peak_ros/reconstruction_nodelet peak_nodelet_manager" output="screen">
+            <remap from="input" to="voxelised_gated_b_scan" />
+            <remap from="output" to="detections" />
+        </node>
+
+
+        <!-- PCD Exporter -->
+        <node pkg="pcl_ros" type="pointcloud_to_pcd" name="peak_pointcloud_to_pcd" args="input:=/peak/detections _prefix:=$(find peak_ros)/bags/" if="$(arg export_pcd)" />
+
+
+        <!-- Logging -->
+        <node pkg="rosbag" type="record" name="rosbag_peak" args="record --repeat-latched -b 1024 -o $(find peak_ros)/bags/$(arg rosbag_name) /tf /peak/a_scans /peak/b_scan /peak/gated_b_scan /peak/detections /iiwa/state/CartesianWrench" if="$(arg logging)" />
+        
+    </group>
+
+
+    <!-- Rviz -->
+    <node pkg="rviz" type="rviz" name="rviz_peak" args="-d $(find peak_ros)/config/bscan.rviz" if="$(arg rviz)" />
+
+</launch>
