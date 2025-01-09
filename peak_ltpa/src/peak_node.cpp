@@ -55,7 +55,7 @@ void PeakNode::initHardware() {
     ROS_INFO_STREAM(node_name_ << ": Initialising Peak hardware...");
 
     peak_handler_.readMpsFile();
-    peak_handler_.connect();
+    peak_handler_.connect(50);
     peak_handler_.sendMpsConfiguration();
 
     prePopulateMessage();
