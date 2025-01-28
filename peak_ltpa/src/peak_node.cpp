@@ -248,7 +248,7 @@ void PeakNode::populateBScanMessage(const peak_ltpa::Observation& bscan_msg) {
             // TODO: If you are going to put a lower bound on the amplitude plotted here would be the place
             *iterX = 0.0;
             *iterY = element_i * bscan_msg.element_pitch * 0.001; // mm to m
-            //*iterZ = i * 0.001;
+            *iterZ = i * 0.0001;
 
             // GAT(S) --- GAT <Tn> <Gate Start> <Gate End>
             // Defines search gate start and end positions for the specified test.
@@ -257,6 +257,7 @@ void PeakNode::populateBScanMessage(const peak_ltpa::Observation& bscan_msg) {
 
             // Maybe assume 100 MHz to start with...
 
+            /*
             double t = (double)i * dt;
             double z = 0.0;
 
@@ -272,6 +273,7 @@ void PeakNode::populateBScanMessage(const peak_ltpa::Observation& bscan_msg) {
             }
 
             *iterZ = z;
+            */
             *iterAmps = amplitude; // 20 * log10 ( abs( amplitude / max(amplitude) ) )
 
             ++iterX;
