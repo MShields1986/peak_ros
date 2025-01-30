@@ -4,7 +4,7 @@
     <!--<arg name="mps_file" default="roller_probe.mps" />-->
     <!--<arg name="mps_file" default="Immersion_5MHz_128EL_Long_8_bit_mod.mps" />-->
     <!--<arg name="mps_file" default="Immersion_5MHz_128EL_Long_16_bit_mod.mps" />-->
-    <arg name="mps_file" default="Immersion_5MHz_128EL_Long_16_bit_mod.mps" />
+    <arg name="mps_file" default="Immersion_5MHz_128EL_Long_8_bit_mod.mps" />
     <arg name="rviz" default="true" />
 
 
