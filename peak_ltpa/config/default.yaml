@@ -1,7 +1,7 @@
 peak_address: "10.1.1.2"
 peak_port: 1067
 
-acquisition_rate: 5
+acquisition_rate: 20
 frame_id: "ltpa"
 
 reconstruction:
