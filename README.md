@@ -35,7 +35,14 @@ After this call check rviz for something that looks like:
 
 ![image](https://github.com/user-attachments/assets/cbbfe197-97f3-4cfd-95d3-ffc41ab652bb)
 
+
 ## Warning!
 Depending on your mps file the reconstruction may not be accurate currently.
 
 TODO: Read the mps file and apply focal laws for reconstruction.
+
+# Branches
+
+This repository has two branches: main and ndt_servoing_moos. The second branch was created for the purpose of adjusting the robot position based off of NDT data. Therefore, variables such as gate and coupling depth are configured to capture a broad range of data. 
+
+TODO: Create automated velocity calculations based off of frontwall.
