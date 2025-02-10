@@ -45,4 +45,10 @@ TODO: Read the mps file and apply focal laws for reconstruction.
 
 This repository has two branches: main and ndt_servoing_moos. The second branch was created for the purpose of adjusting the robot position based off of NDT data. Therefore, variables such as gate and coupling depth are configured to capture a broad range of data. 
 
+To clone the ndt_servoing_moos branch navigate to the desired src folder and type: 
+
+```
+git clone -b ndt_servoing_moos git@github.com:UoS-EEE-Automation/peak_ros.git
+```
+
 TODO: Create automated velocity calculations based off of frontwall.
