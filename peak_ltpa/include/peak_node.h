@@ -12,7 +12,7 @@
 #include <sensor_msgs/PointField.h>
 #include <sensor_msgs/point_cloud2_iterator.h>
 
-#include "PeakMicroPulseHandler/peak_handler.h"
+#include "peak_handler.h"
 
 #include "peak_ltpa/Ascan.h"
 #include "peak_ltpa/Observation.h"

@@ -3,13 +3,16 @@ project(peak_ltpa)
 
 add_compile_options(-std=c++17)
 
-include(FetchContent)
-FetchContent_Declare(
-  peak_micropulse
-  GIT_REPOSITORY https://github.com/MShields1986/peak_micropulse_driver
-  GIT_TAG        main
-)
-FetchContent_MakeAvailable(peak_micropulse)
+#include(FetchContent)
+#FetchContent_Declare(
+#  peak_micropulse
+#  GIT_REPOSITORY https://github.com/MShields1986/peak_micropulse_driver
+#  GIT_TAG        main
+#)
+#FetchContent_MakeAvailable(peak_micropulse)
+
+find_package(Boost 1.71.0 REQUIRED COMPONENTS system)
+find_package(Threads REQUIRED)
 
 find_package(catkin REQUIRED COMPONENTS
   roscpp
@@ -122,13 +125,18 @@ include_directories(
   ${catkin_INCLUDE_DIRS}
 )
 
+set(OTHER_SRC_FILES
+     src/peak_handler.cpp
+     src/tcp_client_boost.cpp
+)
+
 set(EXECUTABLE_NAME peak_node)
 set(EXECUTABLE_SRC src/peak_node.cpp)
 
-add_executable(${EXECUTABLE_NAME} ${EXECUTABLE_SRC})
-#target_include_directories(${EXECUTABLE_NAME} PUBLIC ${INCLUDE_DIR})
+add_executable(${EXECUTABLE_NAME} ${EXECUTABLE_SRC} ${OTHER_SRC_FILES})
 add_dependencies(${EXECUTABLE_NAME} ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-target_link_libraries(${EXECUTABLE_NAME} ${catkin_LIBRARIES} PeakMicroPulseHandler)
+target_link_libraries(${EXECUTABLE_NAME} ${catkin_LIBRARIES})
+#target_link_libraries(${EXECUTABLE_NAME} ${catkin_LIBRARIES} PeakMicroPulseHandler)
 
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
