@@ -95,7 +95,7 @@ generate_messages(
 
 catkin_package(
   INCLUDE_DIRS include
-  LIBRARIES peak_ltpa
+#  LIBRARIES peak_ltpa
   CATKIN_DEPENDS
     roscpp
     nodelet
