@@ -24,3 +24,10 @@ float64                         specimen_depth        # mm
 
 # LTPA Data
 peak_ltpa/Ascan[] ascans
+
+# int8 max_amplitude_8
+# int16 max_amplitude_16
+int32 max_amplitude_8
+int32 max_amplitude_16
+
+# int32 max_amplitude

@@ -2,12 +2,16 @@ cmake_minimum_required(VERSION 3.0.2)
 project(peak_ltpa)
 
 add_compile_options(-std=c++17)
+#set(CMAKE_CXX_FLAGS "-Wall -Wextra -Wconversion -Wunused -Wunreachable-code")
+
+# Required for compiled dependencies
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 include(FetchContent)
 FetchContent_Declare(
   peak_micropulse
   GIT_REPOSITORY https://github.com/MShields1986/peak_micropulse_driver
-  GIT_TAG        main
+  GIT_TAG        feature/nodelet_compatibility
 )
 FetchContent_MakeAvailable(peak_micropulse)
 
@@ -122,6 +126,27 @@ include_directories(
   ${catkin_INCLUDE_DIRS}
 )
 
+
+###################
+# Nodelet Library #
+###################
+
+add_library(
+  ${PROJECT_NAME}_nodelets
+  src/peak_nodelet.cpp
+  src/reconstruction_nodelet.cpp
+)
+
+add_dependencies(${PROJECT_NAME}_nodelets ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(${PROJECT_NAME}_nodelets
+  ${catkin_LIBRARIES}
+  PeakMicroPulseHandler
+  )
+
+###############
+# Peak Node #
+###############
+
 set(EXECUTABLE_NAME peak_node)
 set(EXECUTABLE_SRC src/peak_node.cpp)
 
@@ -129,6 +154,18 @@ add_executable(${EXECUTABLE_NAME} ${EXECUTABLE_SRC})
 #target_include_directories(${EXECUTABLE_NAME} PUBLIC ${INCLUDE_DIR})
 add_dependencies(${EXECUTABLE_NAME} ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(${EXECUTABLE_NAME} ${catkin_LIBRARIES} PeakMicroPulseHandler)
+
+#######################
+# Reconstruction Node #
+#######################
+
+set(EXECUTABLE_NAME reconstruction_node)
+set(EXECUTABLE_SRC src/reconstruction_node.cpp)
+
+add_executable(${EXECUTABLE_NAME} ${EXECUTABLE_SRC})
+# add_executable(${EXECUTABLE_NAME} ${EXECUTABLE_SRC} ${OTHER_SRC_FILES})
+add_dependencies(${EXECUTABLE_NAME} ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(${EXECUTABLE_NAME} ${catkin_LIBRARIES})
 
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations

@@ -1,11 +1,12 @@
 #pragma once
 
+#include <cmath>
 #include <signal.h>
 
 #include <ros/ros.h>
 #include <ros/package.h>
-//#include <nodelet/nodelet.h>
-//#include <pluginlib/class_list_macros.h>
+#include <nodelet/nodelet.h>
+#include <pluginlib/class_list_macros.h>
 
 #include <std_msgs/Header.h>
 #include <sensor_msgs/PointCloud2.h>
@@ -21,13 +22,16 @@
 #include "peak_ltpa/TakeSingleMeasurement.h"
 
 
+namespace peak_namespace {
 
-class PeakNode {
+class PeakNodelet : public nodelet::Nodelet {
 public:
-    PeakNode(bool* kill_now);
+    PeakNodelet();
     //~PeakNode();
 
 private:
+    virtual void                         onInit();
+
     template <typename ParamType>
     ParamType                   paramHandler(std::string param_name, ParamType& param_value);
 
@@ -39,7 +43,8 @@ private:
                                                      peak_ltpa::TakeSingleMeasurement::Response& response);
     void                        takeMeasurement();
     void                        populateAScanMessage();
-    void                        populateBScanMessage(const peak_ltpa::Observation& ascan_msg);
+    void                        populateBScanMessage(const peak_ltpa::Observation& obs_msg);
+    void                        timerCb(const ros::TimerEvent& event);
 
 public:
     void                        run();
@@ -47,6 +52,7 @@ public:
 private:
     ros::NodeHandle             nh_;
     ros::Rate                   rate_;
+    int                         digitisation_rate_;
     bool*                       kill_now_;
     std::string                 node_name_;
     std::string                 ns_;
@@ -72,5 +78,8 @@ private:
     ros::ServiceServer          single_measure_service_;
     ros::ServiceServer          stream_service_;
 
-    //ros::Timer                  timer_;
+    ros::Timer                  timer_;
+
 };
+
+} // namespace peak_namespace
