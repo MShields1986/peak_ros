@@ -7,12 +7,9 @@
     <!-- <arg name="mps_file" default="composite_roller_probe/roller_probe_wing_cover_50_MHz.mps" /> -->
     <arg name="mps_file" default="composite_roller_probe/roller_probe_wing_cover_100_MHz.mps" />
 
-    <arg name="export_pcd" default="true" />
-
-    <arg name="node_logging" default="true" />
-    <arg name="nodelet_logging" default="false" />
+    <arg name="export_pcd" default="false" />
+    <arg name="logging" default="false" />
     <arg name="rosbag_name" default="peak_recording" />
-    <arg name="rosbag_topics" default="[/tf,/peak/a_scans,/peak/b_scan,/peak/voxelised_volume,/iiwa/state/CartesianWrench]" />
 
     <arg name="rviz" default="true" />
 
@@ -49,8 +46,8 @@
                 1 spin 
             -->
        <node pkg="nodelet" type="nodelet" name="voxel_grid" args="load pcl/VoxelGrid peak_nodelet_manager" output="screen">
-            <remap from="~input" to="b_scan" />
-            <remap from="~output" to="voxelised_b_scan" />
+            <remap from="~input" to="gated_b_scan" />
+            <remap from="~output" to="voxelised_gated_b_scan" />
             <rosparam>
             filter_field_name: z
             filter_limit_min: 0.0001
@@ -70,28 +67,17 @@
             -->
         <node pkg="nodelet" type="nodelet" name="reconstruction_nodelet" 
               args="load peak_ros/reconstruction_nodelet peak_nodelet_manager" output="screen">
-            <remap from="input" to="voxelised_b_scan" />
-            <remap from="output" to="voxelised_volume" />
+            <remap from="input" to="voxelised_gated_b_scan" />
+            <remap from="output" to="voxelised_detections" />
         </node>
 
 
         <!-- PCD Exporter -->
-        <node pkg="pcl_ros" type="pointcloud_to_pcd" name="peak_pointcloud_to_pcd" args="input:=/peak/voxelised_volume _prefix:=$(find peak_ros)/bags/" if="$(arg export_pcd)" />
+        <node pkg="pcl_ros" type="pointcloud_to_pcd" name="peak_pointcloud_to_pcd" args="input:=/peak/voxelised_detections _prefix:=$(find peak_ros)/bags/" if="$(arg export_pcd)" />
 
 
-        <!-- Recording Nodelet
-             Threads:
-                n subscribers
-                1 spin 
-            -->
-        <!-- rosbag record /tf /kmr/amcl_pose /kmr/map /camera/color/pointcloud - -repeat-latched -->
-        <node pkg="nodelet" type="nodelet" name="rosbag_nodelet" 
-              args="load nodelet_rosbag/NodeletRosbag peak_nodelet_manager" if="$(arg nodelet_logging)">
-            <rosparam param="rosbag_record_topics" subst_value="True">$(arg rosbag_topics)</rosparam>
-            <param name="rosbag_path" value="$(find peak_ros)/bags/$(arg rosbag_name).bag" />
-        </node>
-
-        <node pkg="rosbag" type="record" name="rosbag_peak" args="record --repeat-latched -b 1024 -o $(find peak_ros)/bags/$(arg rosbag_name) /tf /peak/a_scans /peak/b_scan /peak/voxelised_volume /iiwa/state/CartesianWrench" if="$(arg node_logging)" />
+        <!-- Logging -->
+        <node pkg="rosbag" type="record" name="rosbag_peak" args="record --repeat-latched -b 1024 -o $(find peak_ros)/bags/$(arg rosbag_name) /tf /peak/a_scans /peak/b_scan /peak/gated_b_scan /peak/voxelised_detections /iiwa/state/CartesianWrench" if="$(arg logging)" />
         
     </group>
 

@@ -36,7 +36,9 @@ private:
     ParamType                          paramHandler(std::string param_name, ParamType& param_value);
 
     void                               initHardware();
-    void                               prePopulateMessage();
+    void                               prePopulateAScanMessage();
+    void                               prePopulateBScanMessage();
+    void                               prePopulateGatedBScanMessage();
     bool                               streamDataSrvCb(peak_ros::StreamData::Request& request,
                                                        peak_ros::StreamData::Response& response);
     bool                               takeMeasurementSrvCb(peak_ros::TakeSingleMeasurement::Request& request,
@@ -44,7 +46,7 @@ private:
     void                               takeMeasurement();
     void                               populateAScanMessage();
     void                               populateBScanMessage(const peak_ros::Observation& obs_msg);
-    void                               timerCb(const ros::TimerEvent& event);
+    void                               timerCb(const ros::TimerEvent& /*event*/);
 
 public:
     void                               run();
@@ -63,17 +65,23 @@ private:
     std::string                        peak_address_;
     int                                peak_port_;
     std::string                        mps_file_;
+    float                              gate_front_wall_;
+    float                              depth_to_skip_;
+    float                              gate_back_wall_;
 
     PeakHandler                        peak_handler_;
 
     const PeakHandler::OutputFormat*   ltpa_data_ptr_;
 
-    peak_ros::Observation             ltpa_msg_;
+    peak_ros::Observation              ltpa_msg_;
+    sensor_msgs::PointCloud2           bscan_cloud_;
+    sensor_msgs::PointCloud2           gated_bscan_cloud_;
 
     bool                               stream_;
 
     ros::Publisher                     ascan_publisher_;
     ros::Publisher                     bscan_publisher_;
+    ros::Publisher                     gated_bscan_publisher_;
 
     ros::ServiceServer                 single_measure_service_;
     ros::ServiceServer                 stream_service_;

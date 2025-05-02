@@ -27,6 +27,11 @@ boundary_conditions:
   couplant_depth:         1.0   # mm
   specimen_depth:        65.00  # mm
 
+gates:
+  gate_front_wall:        0.2   # -1 to 1
+  depth_to_skip:          6.5   # mm
+  gate_back_wall:         0.7   # -1 to 1
+
 reconstruction:
   process_rate:           15 # Hz - Consider interplay between this and acquisition rates
   use_tf:               true

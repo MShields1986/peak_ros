@@ -1,5 +1,5 @@
 # peak_ros
-ROS driver for use with PEAK LTPA
+ROS driver for use with PEAK MicroPulse devices.
 
 ## Installation
 
@@ -10,7 +10,7 @@ cd peak_ros
 ./run.sh
 ```
 
-### Host System
+### ROS Workspace
 This package depends on tf2-sensor-msgs. Download the appropriate distribution using the following command:
 
 ```bash
@@ -22,9 +22,9 @@ sudo apt install ros-noetic-tf2-sensor-msgs
 mkdir -p catkin_ws/src
 cd catkin_ws/src
 git clone https://github.com/MShields1986/peak_ros.git
+cd ..
+catkin build
 ```
-
-Use catkin build and source your workspace.
 
 ## Usage
 
@@ -44,9 +44,14 @@ rosservice call /peak/take_single_measurement "take_single_measurement: true"
 rosservice call /peak/stream_data "stream_data: true"
 ```
 
-After this RViz ought to show the current b scan as a pointcloud. 
+After this RViz ought to show the current b scan as a pointcloud on `/peak/b_scan`.
 
-![image](https://github.com/user-attachments/assets/cbbfe197-97f3-4cfd-95d3-ffc41ab652bb)
+![](assets/b_scan.png)
+
+
+If you set appropriate gate parameters in the [config file](src/peak_ros/config/default.yaml) you ought to get a gated b scan as another pointcloud on `/peak/gated_b_scan`.
+
+![](assets/gated_b_scan.png)
 
 ### Warning!
 Depending on your mps file the reconstruction may not be accurate currently.
