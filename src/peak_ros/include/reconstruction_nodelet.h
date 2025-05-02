@@ -54,8 +54,10 @@ private:
 
     bool                                    use_tf_;
     uint16_t                                b_scan_count_;
+    int                                     direction_;
     std::string                             recon_frame_id_;
     double                                  recon_const_vel_;
+    bool                                    flip_direction_;
     ros::Time                               prev_observation_time_;
 
     // TF
