@@ -19,7 +19,7 @@ void PeakNodelet::onInit()
     ros::NodeHandle &nh_ = getMTNodeHandle();
     node_name_ = getName();
     //ns_ = ros::this_node::getNamespace();
-    package_path_ = ros::package::getPath("peak_ltpa");
+    package_path_ = ros::package::getPath("peak_ros");
     peak_handler_.setup(
                         PeakNodelet::paramHandler(ns_ + "/settings/acquisition_rate", acquisition_rate_),
                         PeakNodelet::paramHandler(ns_ + "/settings/peak_address", peak_address_),
@@ -28,7 +28,7 @@ void PeakNodelet::onInit()
                         );
 
    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-   // TODO: Move to using smart pointers
+   // TODO: Move to using smart pointers, mutex, futures or semiphors
    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     ltpa_data_ptr_ = peak_handler_.ltpa_data_ptr();
 
@@ -37,7 +37,7 @@ void PeakNodelet::onInit()
 
     initHardware();
 
-    ascan_publisher_ = nh_.advertise<peak_ltpa::Observation>(ns_ + "/a_scans", 10000, true);
+    ascan_publisher_ = nh_.advertise<peak_ros::Observation>(ns_ + "/a_scans", 10000, true);
     bscan_publisher_ = nh_.advertise<sensor_msgs::PointCloud2>(ns_ + "/b_scan", 10000, true);
 
     single_measure_service_ = nh_.advertiseService(ns_ + "/take_single_measurement", &PeakNodelet::takeMeasurementSrvCb, this);
@@ -121,8 +121,8 @@ void PeakNodelet::prePopulateMessage() {
 }
 
 
-bool PeakNodelet::streamDataSrvCb(peak_ltpa::StreamData::Request& request,
-                                  peak_ltpa::StreamData::Response& response) {
+bool PeakNodelet::streamDataSrvCb(peak_ros::StreamData::Request& request,
+                                  peak_ros::StreamData::Response& response) {
     NODELET_INFO_STREAM(node_name_ << ": Streaming request received: " << request.stream_data);
     if (request.stream_data) {
         stream_ = true;
@@ -136,8 +136,8 @@ bool PeakNodelet::streamDataSrvCb(peak_ltpa::StreamData::Request& request,
 }
 
 
-bool PeakNodelet::takeMeasurementSrvCb(peak_ltpa::TakeSingleMeasurement::Request& request,
-                                       peak_ltpa::TakeSingleMeasurement::Response& response) {
+bool PeakNodelet::takeMeasurementSrvCb(peak_ros::TakeSingleMeasurement::Request& request,
+                                       peak_ros::TakeSingleMeasurement::Response& response) {
     NODELET_INFO_STREAM(node_name_ << ": Take single measurement request received: " << request.take_single_measurement);
     if (request.take_single_measurement) {
         takeMeasurement();
@@ -194,33 +194,23 @@ void PeakNodelet::populateAScanMessage() {
     ltpa_msg_.header.stamp = ros::Time::now();
     ltpa_msg_.ascans.clear();
 
-    // TODO: Consider matching the peak_ltpa::Ascan and PeakHandler::DofMessage
+    // TODO: Consider matching the peak_ros::Ascan and PeakHandler::DofMessage
     //       and set appropriate ROS message attributes
     for (auto ascan : ltpa_data_ptr_->ascans) {
-        peak_ltpa::Ascan ascan_msg;
+        peak_ros::Ascan ascan_msg;
         ascan_msg.count = ascan.header.count;
         ascan_msg.test_number = ascan.header.testNo;
         ascan_msg.dof = ascan.header.dof;
         ascan_msg.channel = ascan.header.channel;
-        // ascan_msg.amplitudes = ascan.amps;
-        if (ascan.header.dof == 1) {
-            ascan_msg.amplitudes_8 = ascan.amps_8;
-        } else if (ascan.header.dof == 4) {
-            ascan_msg.amplitudes_16 = ascan.amps_16;
-        }
+        ascan_msg.amplitudes = ascan.amps;
         ltpa_msg_.ascans.push_back(ascan_msg);
     }
 
-    // ltpa_msg_.max_amplitude = ltpa_data_ptr_->max_amplitude;
-    if (ltpa_msg_.dof == 1) {
-        ltpa_msg_.max_amplitude_8 = ltpa_data_ptr_->max_amplitude_8;
-    } else if (ltpa_msg_.dof == 4) {
-        ltpa_msg_.max_amplitude_16 = ltpa_data_ptr_->max_amplitude_16;
-    }
+    ltpa_msg_.max_amplitude = ltpa_data_ptr_->max_amplitude;
 }
 
 
-void PeakNodelet::populateBScanMessage(const peak_ltpa::Observation& obs_msg) {
+void PeakNodelet::populateBScanMessage(const peak_ros::Observation& obs_msg) {
     sensor_msgs::PointCloud2 bscan_cloud;
     bscan_cloud.header.stamp = obs_msg.header.stamp;
     bscan_cloud.header.frame_id = obs_msg.header.frame_id;
@@ -278,28 +268,12 @@ void PeakNodelet::populateBScanMessage(const peak_ltpa::Observation& obs_msg) {
     for (const auto& ascan : obs_msg.ascans) {
         int i = 0;
 
-        // std::vector amplitudes;
-        // TODO: Don't do this copy operation
-        // if (obs_msg.dof == 1) {
-            //std::vector<int8_t> amplitudes;
-            // amplitudes = ascan.amplitudes_8;
-        // } else if (obs_msg.dof == 4) {
-            //std::vector<int16_t> amplitudes;
-            // amplitudes = ascan.amplitudes_16;
-        // }
-
-        // for (auto amplitude : ascan.amplitudes_8) {
-        for (auto amplitude : ascan.amplitudes_16) {
+        for (auto amplitude : ascan.amplitudes) {
             // Raw Amplitude
             // normalised_amplitude = (float)amplitude;
 
             // Normalised on Linear Scale
-            if (obs_msg.dof == 1) {
-                normalised_amplitude = (float)amplitude / (float)obs_msg.max_amplitude_8;
-            } else if (obs_msg.dof == 4) {
-                normalised_amplitude = (float)amplitude / (float)obs_msg.max_amplitude_16;
-            }
-            // normalised_amplitude = (float)abs( (float)amplitude / (float)obs_msg.max_amplitude);
+            normalised_amplitude = (float)amplitude / (float)obs_msg.max_amplitude;
 
             // Normalised on dB Scale (log)
             // normalised_amplitude = 20.0 * (float)log10( (float)abs( (float)amplitude / (float)obs_msg.max_amplitude) );

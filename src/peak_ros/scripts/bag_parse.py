@@ -111,9 +111,9 @@ def bscan_bag2dataframe(bag, start_time=None, end_time=None):
 ###############################################################################
 
 # Setup
-package_path = rospkg.RosPack().get_path('peak_ltpa')
+package_path = rospkg.RosPack().get_path('peak_ros')
 path = f"{package_path}/bags/"
-# path = "/home/matthew/Desktop/phd_workspaces/kuka_kmr_driver/catkin_ws/src/peak_ros/peak_ltpa/bags/"
+# path = "/home/matthew/Desktop/phd_workspaces/kuka_kmr_driver/catkin_ws/src/peak_ros/peak_ros/bags/"
 
 # file = "fixed_GATS_400-700_GANS_256_2025-04-10-15-01-14.bag"
 # files = [file]

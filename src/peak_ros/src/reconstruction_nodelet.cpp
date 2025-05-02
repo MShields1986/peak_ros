@@ -78,8 +78,8 @@ void ReconstructionNodelet::callback(const sensor_msgs::PointCloud2::ConstPtr& m
 }
 
 
-bool ReconstructionNodelet::publishSrvCb(peak_ltpa::StreamData::Request& request,
-                                         peak_ltpa::StreamData::Response& response) {
+bool ReconstructionNodelet::publishSrvCb(peak_ros::StreamData::Request& request,
+                                         peak_ros::StreamData::Response& response) {
     NODELET_INFO_STREAM(node_name_ << ": Publish UT volume request received: " << request.stream_data);
     if (request.stream_data) {
         publisher_.publish(point_cloud_);

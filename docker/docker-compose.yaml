@@ -31,5 +31,5 @@ services:
       - $XAUTHORITY:/root/.Xauthority
       - ../src:${CATKIN_WORKSPACE_DIR}/src
     #command: sleep infinity
-    command: roslaunch peak_ltpa init.launch
+    command: roslaunch peak_ros init.launch
     #restart: unless-stopped

@@ -1,6 +1,6 @@
-<library path="lib/libpeak_ltpa_nodelets">
+<library path="lib/libpeak_ros_nodelets">
 
-  <class name="peak_ltpa/peak_nodelet"
+  <class name="peak_ros/peak_nodelet"
      type="peak_namespace::PeakNodelet"
      base_class_type="nodelet::Nodelet">
     <description>
@@ -8,7 +8,7 @@
     </description>
   </class>
 
-  <class name="peak_ltpa/reconstruction_nodelet"
+  <class name="peak_ros/reconstruction_nodelet"
      type="reconstruction_namespace::ReconstructionNodelet"
      base_class_type="nodelet::Nodelet">
     <description>

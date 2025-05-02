@@ -17,7 +17,7 @@
 #include <tf2/transform_datatypes.h>
 #include <tf2_sensor_msgs/tf2_sensor_msgs.h>
 
-#include "peak_ltpa/StreamData.h"
+#include "peak_ros/StreamData.h"
 
 
 namespace reconstruction_namespace {
@@ -33,8 +33,8 @@ private:
     ParamType                               paramHandler(std::string param_name, ParamType& param_value);
     void                                    initialisePointcloud();
     void                                    callback(const sensor_msgs::PointCloud2::ConstPtr& msg);
-    bool                                    publishSrvCb(peak_ltpa::StreamData::Request& request,
-                                                         peak_ltpa::StreamData::Response& response);
+    bool                                    publishSrvCb(peak_ros::StreamData::Request& request,
+                                                         peak_ros::StreamData::Response& response);
     void                                    timerCb(const ros::TimerEvent& event);
 
     ros::NodeHandle                         nh_;

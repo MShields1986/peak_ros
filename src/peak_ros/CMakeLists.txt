@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.0.2)
-project(peak_ltpa)
+project(peak_ros)
 
 add_compile_options(-std=c++17)
 #set(CMAKE_CXX_FLAGS "-Wall -Wextra -Wconversion -Wunused -Wunreachable-code")
@@ -99,7 +99,7 @@ generate_messages(
 
 catkin_package(
   INCLUDE_DIRS include
-#  LIBRARIES peak_ltpa
+#  LIBRARIES peak_ros
   CATKIN_DEPENDS
     roscpp
     nodelet
@@ -176,7 +176,7 @@ target_link_libraries(${EXECUTABLE_NAME} ${catkin_LIBRARIES})
 
 ## Declare a C++ library
 # add_library(${PROJECT_NAME}
-#   src/${PROJECT_NAME}/peak_ltpa.cpp
+#   src/${PROJECT_NAME}/peak_ros.cpp
 # )
 
 ## Add cmake target dependencies of the library
@@ -187,7 +187,7 @@ target_link_libraries(${EXECUTABLE_NAME} ${catkin_LIBRARIES})
 ## Declare a C++ executable
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
-# add_executable(${PROJECT_NAME}_node src/peak_ltpa_node.cpp)
+# add_executable(${PROJECT_NAME}_node src/peak_ros_node.cpp)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -251,7 +251,7 @@ target_link_libraries(${EXECUTABLE_NAME} ${catkin_LIBRARIES})
 #############
 
 ## Add gtest based cpp test target and link libraries
-# catkin_add_gtest(${PROJECT_NAME}-test test/test_peak_ltpa.cpp)
+# catkin_add_gtest(${PROJECT_NAME}-test test/test_peak_ros.cpp)
 # if(TARGET ${PROJECT_NAME}-test)
 #   target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME})
 # endif()

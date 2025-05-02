@@ -5,7 +5,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
-path = "/home/matthew/Desktop/phd_workspaces/kuka_kmr_driver/catkin_ws/src/peak_ros/src/peak_ltpa/bags/"
+path = "/home/matthew/Desktop/phd_workspaces/kuka_kmr_driver/catkin_ws/src/peak_ros/src/peak_ros/bags/"
 
 file = "pp_full_1745929447090745.pcd"
 tof_1 = pd.read_csv(f'{path}{file.split(".")[0]}_tof_data.csv', sep=',')
