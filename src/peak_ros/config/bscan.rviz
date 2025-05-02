@@ -4,7 +4,7 @@ Panels:
     Name: Displays
     Property Tree Widget:
       Expanded: ~
-      Splitter Ratio: 0.6499999761581421
+      Splitter Ratio: 0.8352941274642944
     Tree Height: 839
   - Class: rviz/Selection
     Name: Selection
@@ -76,7 +76,7 @@ Visualization Manager:
       Reference Frame: <Fixed Frame>
       Show Trail: false
       Value: true
-    - Alpha: 0.05000000074505806
+    - Alpha: 0.009999999776482582
       Autocompute Intensity Bounds: true
       Autocompute Value Bounds:
         Max Value: 10
@@ -104,14 +104,14 @@ Visualization Manager:
       Use Fixed Frame: true
       Use rainbow: true
       Value: true
-    - Alpha: 0.20000000298023224
+    - Alpha: 1
       Autocompute Intensity Bounds: true
       Autocompute Value Bounds:
         Max Value: 10
         Min Value: -10
         Value: true
       Axis: Z
-      Channel Name: Amplitudes
+      Channel Name: TimeofFlight
       Class: rviz/PointCloud2
       Color: 255; 255; 255
       Color Transformer: Intensity
@@ -120,14 +120,14 @@ Visualization Manager:
       Invert Rainbow: true
       Max Color: 255; 255; 255
       Min Color: 0; 0; 0
-      Name: Voxelised B Scan
+      Name: Gated B Scan
       Position Transformer: XYZ
       Queue Size: 10
       Selectable: false
       Size (Pixels): 10
       Size (m): 0.009999999776482582
       Style: Points
-      Topic: /peak/voxelised_b_scan
+      Topic: /peak/gated_b_scan
       Unreliable: false
       Use Fixed Frame: true
       Use rainbow: true
@@ -148,14 +148,14 @@ Visualization Manager:
       Invert Rainbow: true
       Max Color: 255; 255; 255
       Min Color: 0; 0; 0
-      Name: Voxelised Volume
+      Name: Voxelised Detections
       Position Transformer: XYZ
       Queue Size: 10
       Selectable: false
       Size (Pixels): 10
       Size (m): 0.009999999776482582
       Style: Points
-      Topic: /peak/voxelised_volume
+      Topic: /peak/voxelised_detections
       Unreliable: false
       Use Fixed Frame: true
       Use rainbow: true

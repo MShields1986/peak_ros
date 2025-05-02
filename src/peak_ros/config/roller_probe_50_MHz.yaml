@@ -1,7 +1,7 @@
 peak_address:    "10.1.1.2"
 peak_port:             1067
 
-acquisition_rate:        40
+acquisition_rate:        20
 digitisation_rate:       50 # 0, 10, 25, 50 or 100 (0 = use default)
 frame_id: "ltpa"
 
@@ -26,6 +26,14 @@ boundary_conditions:
   wedge_depth:            0.0   # mm
   couplant_depth:         1.0   # mm
   specimen_depth:        65.00  # mm
+
+gates:
+  gate_front_wall:        0.2   # -1 to 1
+  depth_to_skip:          6.5   # mm
+  gate_back_wall:         0.7   # -1 to 1
+  max_depth:             17.0   # mm
+  zero_to_front_wall:  true     # Sets the gated B Scan to start at the detected frontwall
+  show_front_wall:    false     # Show front wall in the gated B Scan
 
 reconstruction:
   process_rate:          30 # Hz - Consider interplay between this and acquisition rates
