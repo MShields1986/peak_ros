@@ -146,8 +146,13 @@ void PeakNodelet::prePopulateBScanMessage() {
     bscan_cloud_.height = 1;
     bscan_cloud_.is_dense = true;
     bscan_cloud_.point_step = fields * bytes_per_field;
+<<<<<<< HEAD
     bscan_cloud_.row_step = bscan_cloud_.point_step * bscan_cloud_.width;
     bscan_cloud_.data.resize(bscan_cloud_.row_step);
+=======
+    // bscan_cloud_.row_step = bscan_cloud_.point_step * bscan_cloud_.width;
+    // bscan_cloud_.data.resize(bscan_cloud_.row_step);
+>>>>>>> 86a8272583f1700c6e4ee0aa7d38cc7fb2a61377
 }
 
 
@@ -155,8 +160,13 @@ void PeakNodelet::prePopulateGatedBScanMessage() {
     int fields          = 5;
     int bytes_per_field = 4; // 32 bits = 4 bytes
 
+<<<<<<< HEAD
     sensor_msgs::PointCloud2Modifier bscan_cloud_modifier(gated_bscan_cloud_);
     bscan_cloud_modifier.setPointCloud2Fields(
+=======
+    sensor_msgs::PointCloud2Modifier gated_bscan_cloud_modifier(gated_bscan_cloud_);
+    gated_bscan_cloud_modifier.setPointCloud2Fields(
+>>>>>>> 86a8272583f1700c6e4ee0aa7d38cc7fb2a61377
         fields,
         "x", 1,                 sensor_msgs::PointField::FLOAT32,
         "y", 1,                 sensor_msgs::PointField::FLOAT32,
@@ -167,8 +177,13 @@ void PeakNodelet::prePopulateGatedBScanMessage() {
     gated_bscan_cloud_.height = 1;
     gated_bscan_cloud_.is_dense = true;
     gated_bscan_cloud_.point_step = fields * bytes_per_field;
+<<<<<<< HEAD
     gated_bscan_cloud_.row_step = gated_bscan_cloud_.point_step * gated_bscan_cloud_.width;
     gated_bscan_cloud_.data.resize(gated_bscan_cloud_.row_step);
+=======
+    // gated_bscan_cloud_.row_step = gated_bscan_cloud_.point_step * gated_bscan_cloud_.width;
+    // gated_bscan_cloud_.data.resize(gated_bscan_cloud_.row_step);
+>>>>>>> 86a8272583f1700c6e4ee0aa7d38cc7fb2a61377
 }
 
 
@@ -266,7 +281,13 @@ void PeakNodelet::populateBScanMessage(const peak_ros::Observation& obs_msg) {
     bscan_cloud_.header.stamp = obs_msg.header.stamp;
     bscan_cloud_.header.frame_id = obs_msg.header.frame_id;
     bscan_cloud_.width = obs_msg.ascan_length * obs_msg.num_ascans;
+<<<<<<< HEAD
     bscan_cloud_.data.clear();
+=======
+    bscan_cloud_.row_step = bscan_cloud_.point_step * bscan_cloud_.width;
+    bscan_cloud_.data.resize(bscan_cloud_.row_step);
+    //bscan_cloud_.data.clear();
+>>>>>>> 86a8272583f1700c6e4ee0aa7d38cc7fb2a61377
 
     sensor_msgs::PointCloud2Iterator<float> bscan_iterX(bscan_cloud_, "x");
     sensor_msgs::PointCloud2Iterator<float> bscan_iterY(bscan_cloud_, "y");
@@ -276,7 +297,13 @@ void PeakNodelet::populateBScanMessage(const peak_ros::Observation& obs_msg) {
     gated_bscan_cloud_.header.stamp = obs_msg.header.stamp;
     gated_bscan_cloud_.header.frame_id = obs_msg.header.frame_id;
     gated_bscan_cloud_.width = obs_msg.ascan_length * obs_msg.num_ascans;
+<<<<<<< HEAD
     gated_bscan_cloud_.data.clear();
+=======
+    gated_bscan_cloud_.row_step = gated_bscan_cloud_.point_step * gated_bscan_cloud_.width;
+    gated_bscan_cloud_.data.resize(gated_bscan_cloud_.row_step);
+    //gated_bscan_cloud_.data.clear();
+>>>>>>> 86a8272583f1700c6e4ee0aa7d38cc7fb2a61377
 
     sensor_msgs::PointCloud2Iterator<float> gated_bscan_iterX(gated_bscan_cloud_, "x");
     sensor_msgs::PointCloud2Iterator<float> gated_bscan_iterY(gated_bscan_cloud_, "y");
@@ -297,8 +324,14 @@ void PeakNodelet::populateBScanMessage(const peak_ros::Observation& obs_msg) {
     float normalised_amplitude;
     float gated_amplitude;
     float tof;
+<<<<<<< HEAD
 
     int element_i = 0;
+=======
+
+    int element_i = 0;
+
+>>>>>>> 86a8272583f1700c6e4ee0aa7d38cc7fb2a61377
     for (const auto& ascan : obs_msg.ascans) {
         bool    found_front_wall = false;
         float   amp_front_wall   = nan_value;
@@ -328,8 +361,13 @@ void PeakNodelet::populateBScanMessage(const peak_ros::Observation& obs_msg) {
             // }
 
             x = 0.0f;
+<<<<<<< HEAD
             y = (float)(element_i * obs_msg.element_pitch * 0.001f); // mm to m
             z = (float)(i * obs_msg.vel_material * dt / 2.0f);
+=======
+            y = (float)((float)element_i * (float)obs_msg.element_pitch * 0.001f); // mm to m
+            z = (float)((float)i * (float)obs_msg.vel_material * (float)dt / 2.0f);
+>>>>>>> 86a8272583f1700c6e4ee0aa7d38cc7fb2a61377
 
             // Raw Amplitude
             // normalised_amplitude = (float)amplitude;
@@ -339,10 +377,16 @@ void PeakNodelet::populateBScanMessage(const peak_ros::Observation& obs_msg) {
 
             // Normalised on dB Scale
             // normalised_amplitude = 20.0 * (float)log10( (float)abs( (float)amplitude / (float)obs_msg.max_amplitude) );
+<<<<<<< HEAD
 
             *bscan_iterX    = x;
             *bscan_iterY    = y;
             *bscan_iterZ    = z;
+=======
+            *bscan_iterX = x;
+            *bscan_iterY = y;
+            *bscan_iterZ = z;
+>>>>>>> 86a8272583f1700c6e4ee0aa7d38cc7fb2a61377
             *bscan_iterAmps = normalised_amplitude;
 
             ++bscan_iterX;
