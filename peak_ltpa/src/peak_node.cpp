@@ -55,7 +55,7 @@ void PeakNode::initHardware() {
     ROS_INFO_STREAM(node_name_ << ": Initialising Peak hardware...");
 
     peak_handler_.readMpsFile();
-    peak_handler_.connect(50);
+    peak_handler_.connect(100);
     peak_handler_.sendMpsConfiguration();
 
     prePopulateMessage();
@@ -137,42 +137,42 @@ bool PeakNode::takeMeasurementSrvCb(peak_ltpa::TakeSingleMeasurement::Request& r
 
 
 void PeakNode::takeMeasurement() {
-    auto begin = std::chrono::high_resolution_clock::now();
+    // auto begin = std::chrono::high_resolution_clock::now();
 
     // TODO: Return some validity flag for what is in the ltpa_data_ptr_
     if (peak_handler_.sendDataRequest()) {
 
-        auto end_1 = std::chrono::high_resolution_clock::now();
-        std::cout << "\033[32m";
-        std::cout << "Profiling [peak_handler_.sendDataRequest()] --- " << std::chrono::duration_cast<std::chrono::microseconds>(end_1-begin).count() << " us" << std::endl;
-        std::cout << "\033[0m";
+        // auto end_1 = std::chrono::high_resolution_clock::now();
+        // std::cout << "\033[32m";
+        // std::cout << "Profiling [peak_handler_.sendDataRequest()] --- " << std::chrono::duration_cast<std::chrono::microseconds>(end_1-begin).count() << " us" << std::endl;
+        // std::cout << "\033[0m";
 
         populateAScanMessage();
 
-        auto end_2 = std::chrono::high_resolution_clock::now();
-        std::cout << "\033[32m";
-        std::cout << "Profiling [PeakNode::populateAScanMessage()] --- " << std::chrono::duration_cast<std::chrono::microseconds>(end_2-end_1).count() << " us" << std::endl;
-        std::cout << "\033[0m";
+        // auto end_2 = std::chrono::high_resolution_clock::now();
+        // std::cout << "\033[32m";
+        // std::cout << "Profiling [PeakNode::populateAScanMessage()] --- " << std::chrono::duration_cast<std::chrono::microseconds>(end_2-end_1).count() << " us" << std::endl;
+        // std::cout << "\033[0m";
 
         ascan_publisher_.publish(ltpa_msg_);
 
-        auto end_3 = std::chrono::high_resolution_clock::now();
-        std::cout << "\033[32m";
-        std::cout << "Profiling [ascan_publisher_.publish(ltpa_msg_)] --- " << std::chrono::duration_cast<std::chrono::microseconds>(end_3-end_2).count() << " us" << std::endl;
-        std::cout << "\033[0m";
+        // auto end_3 = std::chrono::high_resolution_clock::now();
+        // std::cout << "\033[32m";
+        // std::cout << "Profiling [ascan_publisher_.publish(ltpa_msg_)] --- " << std::chrono::duration_cast<std::chrono::microseconds>(end_3-end_2).count() << " us" << std::endl;
+        // std::cout << "\033[0m";
 
         populateBScanMessage(ltpa_msg_);
 
-        auto end_4 = std::chrono::high_resolution_clock::now();
-        std::cout << "\033[32m";
-        std::cout << "Profiling [PeakNode::populateBScanMessage(ltpa_msg_)] --- " << std::chrono::duration_cast<std::chrono::microseconds>(end_4-end_3).count() << " us" << std::endl;
-        std::cout << "\033[0m";
+        // auto end_4 = std::chrono::high_resolution_clock::now();
+        // std::cout << "\033[32m";
+        // std::cout << "Profiling [PeakNode::populateBScanMessage(ltpa_msg_)] --- " << std::chrono::duration_cast<std::chrono::microseconds>(end_4-end_3).count() << " us" << std::endl;
+        // std::cout << "\033[0m";
     }
 
-    auto end = std::chrono::high_resolution_clock::now();
-    std::cout << "\033[32m";
-    std::cout << "Profiling [PeakNode::takeMeasurement()] --- " << std::chrono::duration_cast<std::chrono::microseconds>(end-begin).count() << " us" << std::endl;
-    std::cout << "\033[0m";
+    // auto end = std::chrono::high_resolution_clock::now();
+    // std::cout << "\033[32m";
+    // std::cout << "Profiling [PeakNode::takeMeasurement()] --- " << std::chrono::duration_cast<std::chrono::microseconds>(end-begin).count() << " us" << std::endl;
+    // std::cout << "\033[0m";
 }
 
 

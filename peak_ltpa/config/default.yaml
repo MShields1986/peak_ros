@@ -1,7 +1,7 @@
 peak_address: "10.1.1.2"
 peak_port: 1067
 
-acquisition_rate: 20
+acquisition_rate: 2
 frame_id: "ltpa"
 
 reconstruction:
@@ -17,7 +17,7 @@ reconstruction:
 # vel_material:        5000.0   # m/s Steel
 # vel_material:        6420.0   # m/s Aluminium
 # vel_material:        2940.0   # m/s CF
-  vel_material:        6420.0   # m/s
+  vel_material:        1500.0   # m/s
 
   wedge_angle:            0.0   # degrees
   wedge_depth:            0.0   # mm
