@@ -1,15 +1,15 @@
 peak_address:    "10.1.1.2"
 peak_port:             1067
 
-acquisition_rate:        20
+acquisition_rate:        25
 digitisation_rate:      100 # 0, 10, 25, 50 or 100 (0 = use default)
 frame_id: "ltpa"
 
 boundary_conditions:
-#  n_elements:           113     # Actually number of focal laws
-  n_elements:             61     # Actually number of focal laws
-#  element_pitch:          1.0   # mm
-  element_pitch:          0.8   # mm
+  n_elements:            49     # Actually number of focal laws
+  # n_elements:             61     # Actually number of focal laws
+  element_pitch:          1.0   # mm
+  # element_pitch:          0.8   # mm
   inter_element_spacing:  0.1   # mm
   element_width:         10.0   # mm
   vel_wedge:           2430.0   # m/s
@@ -19,7 +19,7 @@ boundary_conditions:
 
 #  vel_material:        5000.0   # m/s Steel
 #  vel_material:        6420.0   # m/s Aluminium
-  vel_material:        2940.0   # m/s CF
+  vel_material:         1500.0    # m/s Water
 #  vel_material:        6420.0   # m/s
 
   wedge_angle:            0.0   # degrees
@@ -28,15 +28,15 @@ boundary_conditions:
   specimen_depth:        65.00  # mm
 
 gates:
-  gate_front_wall:        0.2   # -1 to 1
+  gate_front_wall:        0.7   # -1 to 1
   depth_to_skip:          6.5   # mm
   gate_back_wall:         0.7   # -1 to 1
-  max_depth:             17.0   # mm
-  zero_to_front_wall:  true     # Sets the gated B Scan to start at the detected frontwall
+  max_depth:             18.0   # mm
+  zero_to_front_wall: false     # Sets the gated B Scan to start at the detected frontwall
   show_front_wall:     true     # Show front wall in the gated B Scan
 
 reconstruction:
-  process_rate:          20 # Hz - Consider interplay between this and acquisition rates
-  use_tf:              false
-  recon_frame_id:     "plot"
+  process_rate:           15 # Hz - Consider interplay between this and acquisition rates
+  use_tf:               true
+  recon_frame_id:     "world"
   recon_const_vel:        0.05 # m/s - If use_tf == false

@@ -63,7 +63,7 @@ void ReconstructionNodelet::initialisePointcloud() {
         "y",              1, sensor_msgs::PointField::FLOAT32,
         "z",              1, sensor_msgs::PointField::FLOAT32,
         "Amplitudes",     1, sensor_msgs::PointField::FLOAT32,
-        "Time of Flight", 1, sensor_msgs::PointField::FLOAT32
+        "TimeofFlight", 1, sensor_msgs::PointField::FLOAT32
         );
 
     point_cloud_.height = 1;

@@ -64,6 +64,7 @@ private:
     float                              gate_front_wall_;
     float                              depth_to_skip_;
     float                              gate_back_wall_;
+    float                              max_depth_;
     bool                               zero_to_front_wall_;
     bool                               show_front_wall_;
 
