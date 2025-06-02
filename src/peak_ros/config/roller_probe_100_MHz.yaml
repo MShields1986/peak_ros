@@ -9,7 +9,7 @@ profile:              false     # Profiling output for PeakNodelet::takeMeasurem
 
 boundary_conditions:
   n_elements:            61     # Actually number of focal laws
-  element_pitch:          0.8   # mm
+  element_pitch:          0.836 # mm
   inter_element_spacing:  0.1   # mm
   element_width:         10.0   # mm
   vel_wedge:           2430.0   # m/s
