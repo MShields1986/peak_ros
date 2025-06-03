@@ -31,7 +31,7 @@ void ReconstructionNodelet::onInit()
     ReconstructionNodelet::paramHandler(ns_ + "/settings/reconstruction/recon_frame_id", recon_frame_id_);
     if (!use_tf_) {
         ReconstructionNodelet::paramHandler(ns_ + "/settings/reconstruction/recon_const_vel", recon_const_vel_);
-        flip_direction_ = true;
+        ReconstructionNodelet::paramHandler(ns_ + "/settings/reconstruction/flip_direction", flip_direction_);
     }
 
     initialisePointcloud();
@@ -115,7 +115,8 @@ void ReconstructionNodelet::timerCb(const ros::TimerEvent& /*event*/) {
                                                    msg->header.stamp,    // target time
                                                    msg->header.frame_id, // source frame
                                                    msg->header.stamp,    // source time
-                                                   "map",                // fixed frame
+                                                   // "map",                // fixed frame
+                                                   recon_frame_id_,      // fixed frame
                                                    ros::Duration(3.0)    // time out
                                                    );
 

@@ -3,3 +3,4 @@ reconstruction:
   use_tf:              false
   recon_frame_id:     "plot"
   recon_const_vel:        0.05 # m/s - If use_tf == false
+  flip_direction:      false   #       If use_tf == false
