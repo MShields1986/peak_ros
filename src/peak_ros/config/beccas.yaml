@@ -34,9 +34,9 @@ tcg:
   tcg_limit:              0.7
 
 gates:
-  gate_front_wall:        0.7   # -1 to 1
+  gate_front_wall:        0.7   # 0 to 1
   depth_to_skip:          6.5   # mm
-  gate_back_wall:         0.7   # -1 to 1
+  gate_back_wall:         0.7   # 0 to 1
   max_depth:             18.0   # mm
   zero_to_front_wall: false     # Sets the gated B Scan to start at the detected frontwall
   show_front_wall:     true     # Show front wall in the gated B Scan
