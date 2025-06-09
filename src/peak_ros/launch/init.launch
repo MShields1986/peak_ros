@@ -9,7 +9,7 @@
     <arg name="mps_file" default="composite_roller_probe/roller_probe_wing_cover_100_MHz.mps" />
     <!-- <arg name="mps_file" default="beccas.mps" /> -->
 
-    <arg name="export_pcd" default="true" />
+    <arg name="export_pcd" default="false" />
     <arg name="logging" default="true" />
     <arg name="rosbag_name" default="peak_recording" />
 

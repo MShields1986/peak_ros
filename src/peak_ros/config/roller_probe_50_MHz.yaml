@@ -41,6 +41,7 @@ gates:
   show_front_wall:    false     # Show front wall in the gated B Scan
 
 reconstruction:
-  process_rate:          30 # Hz - Consider interplay between this and acquisition rates
+  process_rate:          20 # Hz - Consider interplay between this and acquisition rates
   use_tf:              true
   recon_frame_id: "pcl_crop_box_2"
+  live_publish:        true

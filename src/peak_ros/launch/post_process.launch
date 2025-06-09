@@ -5,11 +5,11 @@
     <!-- <arg name="ros_bag" default="peak_recording_2025-05-20-17-03-45.bag" /> -->
     <!-- <arg name="ros_bag" default="peak_recording_2025-05-30-17-00-57.bag" /> -->
     <!-- Full scan alternating -->
-    <!-- <arg name="ros_bag" default="peak_recording_2025-06-06-12-33-03.bag" /> -->
+    <arg name="ros_bag" default="peak_recording_2025-06-09-15-55-57.bag" />
     <!-- Full scan non-alternating -->
-    <arg name="ros_bag" default="peak_recording_2025-06-06-12-59-50.bag" />
+    <!-- <arg name="ros_bag" default="peak_recording_2025-06-06-12-59-50.bag" /> -->
 
-    <arg name="export_pcd" default="true" />
+    <arg name="export_pcd" default="false" />
     <arg name="logging" default="false" />
     <arg name="rosbag_name" default="peak_recording" />
 

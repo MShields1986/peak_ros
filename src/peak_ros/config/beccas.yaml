@@ -45,4 +45,4 @@ reconstruction:
   process_rate:          15 # Hz - Consider interplay between this and acquisition rates
   use_tf:              true
   recon_frame_id:   "world"
-  recon_const_vel:        0.05 # m/s - If use_tf == false
+  live_publish:        true

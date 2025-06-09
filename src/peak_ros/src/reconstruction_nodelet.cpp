@@ -29,6 +29,7 @@ void ReconstructionNodelet::onInit()
 
     ReconstructionNodelet::paramHandler(ns_ + "/settings/reconstruction/use_tf", use_tf_);
     ReconstructionNodelet::paramHandler(ns_ + "/settings/reconstruction/recon_frame_id", recon_frame_id_);
+    ReconstructionNodelet::paramHandler(ns_ + "/settings/reconstruction/live_publish", live_publish_);
     if (!use_tf_) {
         ReconstructionNodelet::paramHandler(ns_ + "/settings/reconstruction/recon_const_vel", recon_const_vel_);
         ReconstructionNodelet::paramHandler(ns_ + "/settings/reconstruction/flip_direction", flip_direction_);
@@ -153,6 +154,7 @@ void ReconstructionNodelet::timerCb(const ros::TimerEvent& /*event*/) {
 
             if (b_scan_count_ == 0) {
                 trans_.transform.translation.x = 0.0l;
+                // trans_.transform.translation.x = 0.0751l;
                 trans_.transform.translation.y = 0.0l;
                 trans_.transform.translation.z = 0.0l;
                 trans_.transform.rotation.x =  0.0l;
@@ -223,6 +225,10 @@ void ReconstructionNodelet::timerCb(const ros::TimerEvent& /*event*/) {
 
             prev_observation_time_ = msg->header.stamp;
             b_scan_count_++;
+        }
+
+        if (live_publish_) {
+            publisher_.publish(point_cloud_);
         }
     }
 }
