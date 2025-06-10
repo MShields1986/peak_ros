@@ -28,7 +28,8 @@ boundary_conditions:
 tcg:
   use_tcg:             true
   # Amplify by tcg_n dB every tcg_l mm up to a maximum of tcg_limit normalised amplitude
-  amp_factor:             1.0   # dB
+  # amp_factor:             1.0   # dB
+  amp_factor:             1.4   # dB
   depth_factor:           4.0   # mm
   tcg_limit:              0.75
 
@@ -36,8 +37,8 @@ gates:
   gate_front_wall:        0.2   # 0 to 1
   depth_to_skip:          7.0   # mm
   gate_back_wall:         0.7   # 0 to 1
-  # max_depth:             19.0   # mm
-  max_depth:             25.0   # mm
+  max_depth:             19.0   # mm
+  # max_depth:             25.0   # mm
   zero_to_front_wall: false     # Sets the gated B Scan to start at the detected frontwall
   show_front_wall:    false     # Show front wall in the gated B Scan
 
