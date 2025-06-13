@@ -7,6 +7,7 @@ namespace reconstruction_namespace {
 ReconstructionNodelet::ReconstructionNodelet()
  :  rate_(5),
     ns_("/peak"), // TODO: Figure out how to get this when using nodelets so it isn't hardcoded
+    cloud_initialised_(false),
     b_scan_count_(0),
     direction_(1),
     tfListener_(tfBuffer_)
@@ -18,7 +19,6 @@ void ReconstructionNodelet::onInit()
 {
     ros::NodeHandle &nh_ = getMTNodeHandle();
     node_name_ = getName();
-    //ns_ = ros::this_node::getNamespace();
 
     subscriber_ = nh_.subscribe("input", 100, &ReconstructionNodelet::callback, this);
     publisher_ = nh_.advertise<sensor_msgs::PointCloud2>("output", 10, true);
@@ -35,7 +35,7 @@ void ReconstructionNodelet::onInit()
         ReconstructionNodelet::paramHandler(ns_ + "/settings/reconstruction/flip_direction", flip_direction_);
     }
 
-    initialisePointcloud();
+    // initialisePointcloud();
 }
 
 
@@ -78,7 +78,92 @@ void ReconstructionNodelet::initialisePointcloud() {
 }
 
 
+void ReconstructionNodelet::initialisePointcloud(const sensor_msgs::PointCloud2::ConstPtr& input_cloud) {
+    bool error = false;
+    point_cloud_.data.clear();
+
+    int fields          = input_cloud->fields.size();
+    int bytes_per_field = 4;
+
+    point_cloud_.header.stamp = ros::Time::now();
+    point_cloud_.header.frame_id = recon_frame_id_;
+    sensor_msgs::PointCloud2Modifier modifier(point_cloud_);
+
+    // TODO: Got to be a better way to do this but my brain no work now
+    if (fields == 1) {
+        modifier.setPointCloud2Fields(
+            fields,
+            input_cloud->fields[0].name, 1, input_cloud->fields[0].datatype
+            );
+        point_cloud_.point_step = fields * bytes_per_field;
+    } else if (fields == 2) {
+        modifier.setPointCloud2Fields(
+            fields,
+            input_cloud->fields[0].name, 1, input_cloud->fields[0].datatype,
+            input_cloud->fields[1].name, 1, input_cloud->fields[1].datatype
+            );
+        point_cloud_.point_step = fields * bytes_per_field;
+    } else if (fields == 3) {
+        modifier.setPointCloud2Fields(
+            fields,
+            input_cloud->fields[0].name, 1, input_cloud->fields[0].datatype,
+            input_cloud->fields[1].name, 1, input_cloud->fields[1].datatype,
+            input_cloud->fields[2].name, 1, input_cloud->fields[2].datatype
+            );
+        point_cloud_.point_step = fields * bytes_per_field;
+    } else if (fields == 4) {
+        modifier.setPointCloud2Fields(
+            fields,
+            input_cloud->fields[0].name, 1, input_cloud->fields[0].datatype,
+            input_cloud->fields[1].name, 1, input_cloud->fields[1].datatype,
+            input_cloud->fields[2].name, 1, input_cloud->fields[2].datatype,
+            input_cloud->fields[3].name, 1, input_cloud->fields[3].datatype
+            );
+        point_cloud_.point_step = fields * bytes_per_field;
+    } else if (fields == 5) {
+        modifier.setPointCloud2Fields(
+            fields,
+            input_cloud->fields[0].name, 1, input_cloud->fields[0].datatype,
+            input_cloud->fields[1].name, 1, input_cloud->fields[1].datatype,
+            input_cloud->fields[2].name, 1, input_cloud->fields[2].datatype,
+            input_cloud->fields[3].name, 1, input_cloud->fields[3].datatype,
+            input_cloud->fields[4].name, 1, input_cloud->fields[4].datatype
+            );
+        point_cloud_.point_step = fields * bytes_per_field;
+    } else if (fields == 6) {
+        modifier.setPointCloud2Fields(
+            fields,
+            input_cloud->fields[0].name, 1, input_cloud->fields[0].datatype,
+            input_cloud->fields[1].name, 1, input_cloud->fields[1].datatype,
+            input_cloud->fields[2].name, 1, input_cloud->fields[2].datatype,
+            input_cloud->fields[3].name, 1, input_cloud->fields[3].datatype,
+            input_cloud->fields[4].name, 1, input_cloud->fields[4].datatype,
+            input_cloud->fields[5].name, 1, input_cloud->fields[5].datatype
+            );
+        point_cloud_.point_step = fields * bytes_per_field;
+    } else {
+        NODELET_ERROR_STREAM(node_name_ << 
+            ": Input pointcloud must have 1 to 6 fields, input field count: " << fields);
+        error = true;
+    }
+
+    if (not error) {
+        point_cloud_.height = 1;
+        point_cloud_.width = 0;
+        point_cloud_.is_dense = true;
+        point_cloud_.row_step = point_cloud_.point_step * point_cloud_.width;
+        point_cloud_.data.resize(point_cloud_.row_step);
+
+        cloud_initialised_ = true;
+    }
+}
+
+
 void ReconstructionNodelet::callback(const sensor_msgs::PointCloud2::ConstPtr& msg) {
+    if (not cloud_initialised_) {
+        initialisePointcloud(msg);
+    }
+
     buffer_.push_back(*msg);
 }
 
@@ -86,7 +171,7 @@ void ReconstructionNodelet::callback(const sensor_msgs::PointCloud2::ConstPtr& m
 bool ReconstructionNodelet::publishSrvCb(peak_ros::StreamData::Request& request,
                                          peak_ros::StreamData::Response& response) {
     NODELET_INFO_STREAM(node_name_ << 
-        ": Publish UT volume request received: " << request.stream_data);
+        ": Publish reconstruction request received: " << request.stream_data);
 
     if (request.stream_data) {
         publisher_.publish(point_cloud_);
@@ -116,7 +201,6 @@ void ReconstructionNodelet::timerCb(const ros::TimerEvent& /*event*/) {
                                                    msg->header.stamp,    // target time
                                                    msg->header.frame_id, // source frame
                                                    msg->header.stamp,    // source time
-                                                   // "map",                // fixed frame
                                                    recon_frame_id_,      // fixed frame
                                                    ros::Duration(3.0)    // time out
                                                    );

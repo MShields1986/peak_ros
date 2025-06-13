@@ -32,6 +32,7 @@ private:
     template <typename ParamType>
     ParamType                               paramHandler(std::string param_name, ParamType& param_value);
     void                                    initialisePointcloud();
+    void                                    initialisePointcloud(const sensor_msgs::PointCloud2::ConstPtr& input_cloud);
     void                                    callback(const sensor_msgs::PointCloud2::ConstPtr& msg);
     bool                                    publishSrvCb(peak_ros::StreamData::Request& request,
                                                          peak_ros::StreamData::Response& response);
@@ -41,6 +42,7 @@ private:
     int32_t                                 rate_;
     std::string                             node_name_;
     std::string                             ns_;
+    bool                                    cloud_initialised_;
 
     ros::Subscriber                         subscriber_;
 
