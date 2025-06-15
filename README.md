@@ -48,7 +48,7 @@ After this RViz ought to show the current b scan as a pointcloud on `/peak/b_sca
 
 ![](assets/b_scan.png)
 
-If you set appropriate gate parameters in the [config file](src/peak_ros/config/default.yaml) you ought to get a gated b scan as another pointcloud on `/peak/gated_b_scan`.
+If you set appropriate gate parameters in the [config file](src/peak_ros/config/default.yaml) you ought to get a gated b scan as another pointcloud on `/peak/gated_b_scan`, which will depict the front wall, if enabled, and the backwall or any defects.
 
 ![](assets/gated_b_scan.png)
 
@@ -56,7 +56,7 @@ If you set appropriate gate parameters in the [config file](src/peak_ros/config/
 Currently this driver required MPS files to contain the following directives in order to correctly parse data:
     1. DOF - Needed to determine the resolution and size of the returned data (currently only 1 and 4 are supported)
     2. GATS - Needed to determine the length of each a scan
-    3. SWP - Needed to determine the number of focal laws
+    3. SWP - Needed to determine the number of focal laws (Note, that only a single sweep is currently supported)
 
 Please ensure that your MPS file contains only one of each of these directives and that it accurately reflects what you are trying to achieve. MPS files ought to be placed in the `src/peak_ros/mps` and then modifiy the [launch file](src/peak_ros/launch/init.launch) `mps_file` launch arguement.
 
