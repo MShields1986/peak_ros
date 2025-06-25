@@ -10,7 +10,7 @@
     <!-- <arg name="mps_file" default="beccas.mps" /> -->
 
     <arg name="export_pcd" default="false" />
-    <arg name="logging" default="true" />
+    <arg name="logging" default="false" />
     <arg name="rosbag_name" default="peak_recording" />
 
     <arg name="rviz" default="true" />
