@@ -2,12 +2,14 @@
 <launch>
     <!-- <arg name="configuration" default="default.yaml" /> -->
     <!-- <arg name="configuration" default="roller_probe_50_MHz.yaml" /> -->
-    <arg name="configuration" default="roller_probe_100_MHz.yaml" />
-    <!-- <arg name="configuration" default="beccas.yaml" /> -->
+    <!-- <arg name="configuration" default="roller_probe_100_MHz.yaml" /> -->
+    <arg name="configuration" default="beccas.yaml" />
 
     <!-- <arg name="mps_file" default="composite_roller_probe/roller_probe_wing_cover_50_MHz.mps" /> -->
-    <arg name="mps_file" default="composite_roller_probe/roller_probe_wing_cover_100_MHz.mps" />
+    <!-- <arg name="mps_file" default="composite_roller_probe/roller_probe_wing_cover_100_MHz.mps" /> -->
     <!-- <arg name="mps_file" default="beccas.mps" /> -->
+    <arg name="mps_file" default="Immersion_5MHz_128EL_Long_8_bit_mod.mps" />
+    <!-- <arg name="mps_file" default="test3.mps" /> -->
 
     <arg name="export_pcd" default="false" />
     <arg name="logging" default="false" />

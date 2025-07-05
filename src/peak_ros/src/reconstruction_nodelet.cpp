@@ -113,7 +113,7 @@ void ReconstructionNodelet::timerCb(const ros::TimerEvent& /*event*/) {
                                                    msg->header.stamp,    // target time
                                                    msg->header.frame_id, // source frame
                                                    msg->header.stamp,    // source time
-                                                   "map",                // fixed frame
+                                                   "world",                // fixed frame
                                                    ros::Duration(3.0)    // time out
                                                    );
 
