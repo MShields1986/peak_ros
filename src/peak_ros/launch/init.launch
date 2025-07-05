@@ -72,12 +72,18 @@
         <node pkg="nodelet" type="nodelet" name="reconstruction_nodelet" 
               args="load peak_ros/reconstruction_nodelet peak_nodelet_manager" output="screen">
             <remap from="input" to="voxelised_gated_b_scan" />
+<<<<<<< HEAD
             <remap from="output" to="voxelised_detections" />
+=======
+>>>>>>> a839210f6c272f6de1103f1810b54252b2448aa8
             <remap from="output" to="detections" />
         </node>
 
         <!-- PCD Exporter -->
+<<<<<<< HEAD
 
+=======
+>>>>>>> a839210f6c272f6de1103f1810b54252b2448aa8
         <node pkg="pcl_ros" type="pointcloud_to_pcd" name="peak_pointcloud_to_pcd" args="input:=/peak/detections _prefix:=$(find peak_ros)/bags/" if="$(arg export_pcd)" />
 
 

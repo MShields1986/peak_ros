@@ -51,12 +51,12 @@ private:
     ros::NodeHandle                    nh_;
     ros::Rate                          rate_;
     int                                digitisation_rate_;
-    bool*                              kill_now_;
     std::string                        node_name_;
     std::string                        ns_;
-
     std::string                        package_path_;
+    bool                               profile_;
 
+    // Config
     int                                acquisition_rate_;
     std::string                        peak_address_;
     int                                peak_port_;
@@ -68,10 +68,25 @@ private:
     bool                               zero_to_front_wall_;
     bool                               show_front_wall_;
 
-    PeakHandler                        peak_handler_;
+    // TCG
+    bool                               use_tcg_;
+    float                              amp_factor_;
+    float                              depth_factor_;
+    float                              tcg_limit_;
 
+    // Gates
+    float                              gate_front_wall_;
+    float                              depth_to_skip_;
+    float                              gate_back_wall_;
+    float                              max_depth_;
+    bool                               zero_to_front_wall_;
+    bool                               show_front_wall_;
+
+    // Input
+    PeakHandler                        peak_handler_;
     const PeakHandler::OutputFormat*   ltpa_data_ptr_;
 
+    // Output
     peak_ros::Observation              ltpa_msg_;
     sensor_msgs::PointCloud2           bscan_cloud_;
     sensor_msgs::PointCloud2           gated_bscan_cloud_;

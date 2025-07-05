@@ -49,13 +49,16 @@ private:
 
     ros::Timer                              timer_;
 
-    sensor_msgs::PointCloud2                point_cloud_; // TODO: Consider heap allocation
+    sensor_msgs::PointCloud2                point_cloud_;
     std::deque<sensor_msgs::PointCloud2>    buffer_;
 
     bool                                    use_tf_;
-    uint16_t                                b_scan_count_;
+    uint32_t                                b_scan_count_;
+    int                                     direction_;
     std::string                             recon_frame_id_;
+    bool                                    live_publish_;
     double                                  recon_const_vel_;
+    bool                                    flip_direction_;
     ros::Time                               prev_observation_time_;
 
     // TF

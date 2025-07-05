@@ -8,6 +8,7 @@ ReconstructionNodelet::ReconstructionNodelet()
  :  rate_(5),
     ns_("/peak"), // TODO: Figure out how to get this when using nodelets so it isn't hardcoded
     b_scan_count_(0),
+    direction_(1),
     tfListener_(tfBuffer_)
 {
 }
@@ -28,8 +29,10 @@ void ReconstructionNodelet::onInit()
 
     ReconstructionNodelet::paramHandler(ns_ + "/settings/reconstruction/use_tf", use_tf_);
     ReconstructionNodelet::paramHandler(ns_ + "/settings/reconstruction/recon_frame_id", recon_frame_id_);
+    ReconstructionNodelet::paramHandler(ns_ + "/settings/reconstruction/live_publish", live_publish_);
     if (!use_tf_) {
         ReconstructionNodelet::paramHandler(ns_ + "/settings/reconstruction/recon_const_vel", recon_const_vel_);
+        ReconstructionNodelet::paramHandler(ns_ + "/settings/reconstruction/flip_direction", flip_direction_);
     }
 
     initialisePointcloud();
@@ -113,7 +116,8 @@ void ReconstructionNodelet::timerCb(const ros::TimerEvent& /*event*/) {
                                                    msg->header.stamp,    // target time
                                                    msg->header.frame_id, // source frame
                                                    msg->header.stamp,    // source time
-                                                   "world",                // fixed frame
+                                                   // "map",                // fixed frame
+                                                   recon_frame_id_,      // fixed frame
                                                    ros::Duration(3.0)    // time out
                                                    );
 
@@ -147,30 +151,64 @@ void ReconstructionNodelet::timerCb(const ros::TimerEvent& /*event*/) {
             trans_.header.frame_id = recon_frame_id_;
             trans_.child_frame_id = msg->header.frame_id;
 
+
             if (b_scan_count_ == 0) {
-                trans_.transform.translation.x = 0.0;
-                trans_.transform.translation.y = 0.0;
-                trans_.transform.translation.z = 0.0;
-                trans_.transform.rotation.x = 0.0;
-                trans_.transform.rotation.y = 0.0;
-                trans_.transform.rotation.z = 0.0;
-                trans_.transform.rotation.w = 1.0;
+                trans_.transform.translation.x = 0.0l;
+                // trans_.transform.translation.x = 0.0751l;
+                trans_.transform.translation.y = 0.0l;
+                trans_.transform.translation.z = 0.0l;
+                trans_.transform.rotation.x =  0.0l;
+                trans_.transform.rotation.y = -1.0l;
+                trans_.transform.rotation.z =  0.0l;
+                trans_.transform.rotation.w =  0.0l;
+
             } else {
                 ros::Duration dt = msg->header.stamp - prev_observation_time_;
 
-                trans_.transform.translation.x += recon_const_vel_ * dt.toSec();
-
-                if (dt.toSec() > 4) {
+                // During scan pass
+                if (dt.toSec() < 4.0l) {
+                    if (direction_ == 1) {
+                        NODELET_INFO_STREAM_THROTTLE(30, node_name_ << ": Going forwards");
+                        trans_.transform.translation.x += recon_const_vel_ * dt.toSec();
+                    } else {
+                        NODELET_INFO_STREAM_THROTTLE(30, node_name_ << ": Going backwards");
+                        trans_.transform.translation.x -= recon_const_vel_ * dt.toSec();
+                    }
+                // Switching raster paths
+                } else {
                     publisher_.publish(point_cloud_);
                     NODELET_INFO_STREAM(node_name_ << ": Published reconstruction");
-
-                    initialisePointcloud();
-                    trans_.transform.translation.x = 0.0;
-                    trans_.transform.translation.y += 0.045;
+                    // initialisePointcloud();
+                    if (flip_direction_) {
+                        if (direction_ == 1) {
+                            NODELET_INFO_STREAM(node_name_ << ": Changing direction");
+                            direction_ = -1;
+                            trans_.transform.translation.y += 0.09l;
+                            trans_.transform.rotation.x =  1.0l;
+                            trans_.transform.rotation.y =  0.0l;
+                            trans_.transform.rotation.z =  0.0l;
+                            trans_.transform.rotation.w =  0.0l;
+                        } else {
+                            NODELET_INFO_STREAM(node_name_ << ": Changing direction");
+                            direction_ = 1;
+                            trans_.transform.rotation.x =  0.0l;
+                            trans_.transform.rotation.y = -1.0l;
+                            trans_.transform.rotation.z =  0.0l;
+                            trans_.transform.rotation.w =  0.0l;
+                        }
+                    } else {
+                        trans_.transform.translation.x  = 0.0l;
+                        trans_.transform.translation.y += 0.045l;
+                        NODELET_INFO_STREAM(node_name_ << ": Reset start of pass to zero: " << trans_.transform.translation.x);
+                    }
                 }
             }
 
             tf2::doTransform<sensor_msgs::PointCloud2>(*msg, output_pointcloud2, trans_);
+
+            // NODELET_INFO_STREAM_THROTTLE(10, node_name_ << ": transform translation x: " << trans_.transform.translation.x);
+            // NODELET_INFO_STREAM_THROTTLE(10, node_name_ << ": transform translation y: " << trans_.transform.translation.y);
+            // NODELET_INFO_STREAM_THROTTLE(10, node_name_ << ": transform translation z: " << trans_.transform.translation.z);
 
             point_cloud_.width += output_pointcloud2.width;
             uint64_t prev_size = point_cloud_.data.size();
@@ -187,6 +225,10 @@ void ReconstructionNodelet::timerCb(const ros::TimerEvent& /*event*/) {
 
             prev_observation_time_ = msg->header.stamp;
             b_scan_count_++;
+        }
+
+        if (live_publish_) {
+            publisher_.publish(point_cloud_);
         }
     }
 }

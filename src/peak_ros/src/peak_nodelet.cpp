@@ -34,6 +34,22 @@ void PeakNodelet::onInit()
 
     rate_ = ros::Rate(acquisition_rate_);
     PeakNodelet::paramHandler(ns_ + "/settings/digitisation_rate", digitisation_rate_);
+    PeakNodelet::paramHandler(ns_ + "/settings/profile", profile_);
+
+    PeakNodelet::paramHandler(ns_ + "/settings/tcg/use_tcg", use_tcg_);
+    PeakNodelet::paramHandler(ns_ + "/settings/tcg/amp_factor", amp_factor_);
+    PeakNodelet::paramHandler(ns_ + "/settings/tcg/depth_factor", depth_factor_);
+    PeakNodelet::paramHandler(ns_ + "/settings/tcg/tcg_limit", tcg_limit_);
+    depth_factor_ = depth_factor_ * 0.001f;
+
+    PeakNodelet::paramHandler(ns_ + "/settings/gates/gate_front_wall", gate_front_wall_);
+    PeakNodelet::paramHandler(ns_ + "/settings/gates/depth_to_skip", depth_to_skip_);
+    PeakNodelet::paramHandler(ns_ + "/settings/gates/gate_back_wall", gate_back_wall_);
+    PeakNodelet::paramHandler(ns_ + "/settings/gates/max_depth", max_depth_);
+    PeakNodelet::paramHandler(ns_ + "/settings/gates/zero_to_front_wall", zero_to_front_wall_);
+    PeakNodelet::paramHandler(ns_ + "/settings/gates/show_front_wall", show_front_wall_);
+    depth_to_skip_ = depth_to_skip_ * 0.001f;
+    max_depth_ = max_depth_ * 0.001f;
 
     PeakNodelet::paramHandler(ns_ + "/settings/gates/gate_front_wall", gate_front_wall_);
     PeakNodelet::paramHandler(ns_ + "/settings/gates/depth_to_skip", depth_to_skip_);
@@ -148,8 +164,6 @@ void PeakNodelet::prePopulateBScanMessage() {
     bscan_cloud_.height = 1;
     bscan_cloud_.is_dense = true;
     bscan_cloud_.point_step = fields * bytes_per_field;
-    // bscan_cloud_.row_step = bscan_cloud_.point_step * bscan_cloud_.width;
-    // bscan_cloud_.data.resize(bscan_cloud_.row_step);
 }
 
 
@@ -160,17 +174,16 @@ void PeakNodelet::prePopulateGatedBScanMessage() {
     sensor_msgs::PointCloud2Modifier gated_bscan_cloud_modifier(gated_bscan_cloud_);
     gated_bscan_cloud_modifier.setPointCloud2Fields(
         fields,
-        "x", 1,                 sensor_msgs::PointField::FLOAT32,
-        "y", 1,                 sensor_msgs::PointField::FLOAT32,
-        "z", 1,                 sensor_msgs::PointField::FLOAT32,
-        "Amplitudes", 1,        sensor_msgs::PointField::FLOAT32,
-        "TimeofFlight", 1,    sensor_msgs::PointField::FLOAT32
+
+        "x", 1,            sensor_msgs::PointField::FLOAT32,
+        "y", 1,            sensor_msgs::PointField::FLOAT32,
+        "z", 1,            sensor_msgs::PointField::FLOAT32,
+        "Amplitudes", 1,   sensor_msgs::PointField::FLOAT32,
+        "TimeofFlight", 1, sensor_msgs::PointField::FLOAT32
         );
     gated_bscan_cloud_.height = 1;
     gated_bscan_cloud_.is_dense = true;
     gated_bscan_cloud_.point_step = fields * bytes_per_field;
-    // gated_bscan_cloud_.row_step = gated_bscan_cloud_.point_step * gated_bscan_cloud_.width;
-    // gated_bscan_cloud_.data.resize(gated_bscan_cloud_.row_step);
 }
 
 
@@ -204,48 +217,76 @@ bool PeakNodelet::takeMeasurementSrvCb(peak_ros::TakeSingleMeasurement::Request&
 
 
 void PeakNodelet::takeMeasurement() {
-    // auto begin = std::chrono::high_resolution_clock::now();
+
+    // TODO: Remove profiling when happy with acquisition rates
+    std::chrono::high_resolution_clock::time_point begin;
+    std::chrono::high_resolution_clock::time_point end;
+    std::chrono::high_resolution_clock::time_point end_1;
+    std::chrono::high_resolution_clock::time_point end_2;
+    std::chrono::high_resolution_clock::time_point end_3;
+    std::chrono::high_resolution_clock::time_point end_4;
+    std::chrono::high_resolution_clock::time_point end_5;
+
+    if (profile_) begin = std::chrono::high_resolution_clock::now();
 
     // ~40ms
     if (peak_handler_.sendDataRequest()) {
 
-        // auto end_1 = std::chrono::high_resolution_clock::now();
-        // std::cout << "\033[32m";
-        // std::cout << "Profiling [peak_handler_.sendDataRequest()] --- " << std::chrono::duration_cast<std::chrono::microseconds>(end_1-begin).count() << " us" << std::endl;
-        // std::cout << "\033[0m";
+        if (profile_) {
+            end_1 = std::chrono::high_resolution_clock::now();
+            std::cout << "\033[32m";
+            std::cout << "Profiling [peak_handler_.sendDataRequest()] --- " << std::chrono::duration_cast<std::chrono::microseconds>(end_1-begin).count() << " us" << std::endl;
+            std::cout << "\033[0m";
+        }
 
         // ~0.3ms
         populateAScanMessage();
 
-        // auto end_2 = std::chrono::high_resolution_clock::now();
-        // std::cout << "\033[32m";
-        // std::cout << "Profiling [PeakNodelet::populateAScanMessage()] --- " << std::chrono::duration_cast<std::chrono::microseconds>(end_2-end_1).count() << " us" << std::endl;
-        // std::cout << "\033[0m";
+        if (profile_) {
+            end_2 = std::chrono::high_resolution_clock::now();
+            std::cout << "\033[32m";
+            std::cout << "Profiling [PeakNodelet::populateAScanMessage()] --- " << std::chrono::duration_cast<std::chrono::microseconds>(end_2-end_1).count() << " us" << std::endl;
+            std::cout << "\033[0m";
+        }
 
         // ~0.4ms
         ascan_publisher_.publish(ltpa_msg_);
 
-        // auto end_3 = std::chrono::high_resolution_clock::now();
-        // std::cout << "\033[32m";
-        // std::cout << "Profiling [ascan_publisher_.publish(ltpa_msg_)] --- " << std::chrono::duration_cast<std::chrono::microseconds>(end_3-end_2).count() << " us" << std::endl;
-        // std::cout << "\033[0m";
+        if (profile_) {
+            end_3 = std::chrono::high_resolution_clock::now();
+            std::cout << "\033[32m";
+            std::cout << "Profiling [ascan_publisher_.publish(ltpa_msg_)] --- " << std::chrono::duration_cast<std::chrono::microseconds>(end_3-end_2).count() << " us" << std::endl;
+            std::cout << "\033[0m";
+        }
 
         // ~12ms
         populateBScanMessage(ltpa_msg_);
 
-        // auto end_4 = std::chrono::high_resolution_clock::now();
-        // std::cout << "\033[32m";
-        // std::cout << "Profiling [PeakNodelet::populateBScanMessage(ltpa_msg_)] --- " << std::chrono::duration_cast<std::chrono::microseconds>(end_4-end_3).count() << " us" << std::endl;
-        // std::cout << "\033[0m";
+        if (profile_) {
+            end_4 = std::chrono::high_resolution_clock::now();
+            std::cout << "\033[32m";
+            std::cout << "Profiling [PeakNodelet::populateBScanMessage(ltpa_msg_)] --- " << std::chrono::duration_cast<std::chrono::microseconds>(end_4-end_3).count() << " us" << std::endl;
+            std::cout << "\033[0m";
+        }
         
         bscan_publisher_.publish(bscan_cloud_);
+
+        if (profile_) {
+            end_5 = std::chrono::high_resolution_clock::now();
+            std::cout << "\033[32m";
+            std::cout << "Profiling [bscan_publisher_.publish(bscan_cloud_);] --- " << std::chrono::duration_cast<std::chrono::microseconds>(end_5-end_4).count() << " us" << std::endl;
+            std::cout << "\033[0m";
+        }
+
         gated_bscan_publisher_.publish(gated_bscan_cloud_);
     }
 
-    // auto end = std::chrono::high_resolution_clock::now();
-    // std::cout << "\033[32m";
-    // std::cout << "Profiling [PeakNodelet::takeMeasurement()] --- " << std::chrono::duration_cast<std::chrono::microseconds>(end-begin).count() << " us" << std::endl;
-    // std::cout << "\033[0m";
+    if (profile_) {
+        end = std::chrono::high_resolution_clock::now();
+        std::cout << "\033[32m";
+        std::cout << "Profiling [PeakNodelet::takeMeasurement()] --- " << std::chrono::duration_cast<std::chrono::microseconds>(end-begin).count() << " us" << std::endl;
+        std::cout << "\033[0m";
+    }
 }
 
 
@@ -253,8 +294,6 @@ void PeakNodelet::populateAScanMessage() {
     ltpa_msg_.header.stamp = ros::Time::now();
     ltpa_msg_.ascans.clear();
 
-    // TODO: Consider matching the peak_ros::Ascan and PeakHandler::DofMessage
-    //       and set appropriate ROS message attributes
     for (auto ascan : ltpa_data_ptr_->ascans) {
         peak_ros::Ascan ascan_msg;
         ascan_msg.count = ascan.header.count;
@@ -342,6 +381,23 @@ void PeakNodelet::populateBScanMessage(const peak_ros::Observation& obs_msg) {
             x = 0.0f;
             y = (float)((float)element_i * (float)obs_msg.element_pitch * 0.001f); // mm to m
             z = (float)((float)i * (float)obs_msg.vel_material * dt / 2.0f);
+
+            if (use_tcg_ and z > (10.0f * 0.001f)) { // TODO: Param for skipping x mm in before applying tcg
+                float amplitude_tcg;
+
+                // Amplify by n dB per l mm
+                // amplitude_tcg = amplitude * 10.0 ^ (n * (z / l) / 20.0);
+                amplitude_tcg = (float)amplitude * std::pow(10.0f, (amp_factor_ * (z / depth_factor_) / 20.0f));
+
+
+                if (amplitude_tcg > (float)obs_msg.max_amplitude * tcg_limit_) {
+                    amplitude_tcg = (float)obs_msg.max_amplitude * tcg_limit_;
+                } else if (amplitude_tcg < -(float)obs_msg.max_amplitude * tcg_limit_) {
+                    amplitude_tcg = -(float)obs_msg.max_amplitude * tcg_limit_;
+                }
+
+                amplitude = amplitude_tcg;
+            }
 
             // Raw Amplitude
             // normalised_amplitude = (float)amplitude;

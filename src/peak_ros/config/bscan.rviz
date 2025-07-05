@@ -5,7 +5,7 @@ Panels:
     Property Tree Widget:
       Expanded: ~
       Splitter Ratio: 0.8352941274642944
-    Tree Height: 746
+      Tree Height: 746
   - Class: rviz/Selection
     Name: Selection
   - Class: rviz/Tool Properties
@@ -148,14 +148,14 @@ Visualization Manager:
       Invert Rainbow: true
       Max Color: 255; 255; 255
       Min Color: 0; 0; 0
-      Name: Voxelised Detections
+      Name: Detections
       Position Transformer: XYZ
       Queue Size: 10
       Selectable: false
-      Size (Pixels): 10
+      Size (Pixels): 2
       Size (m): 0.009999999776482582
       Style: Points
-      Topic: /peak/voxelised_detections
+      Topic: /peak/detections
       Unreliable: false
       Use Fixed Frame: true
       Use rainbow: true
