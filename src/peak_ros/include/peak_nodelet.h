@@ -74,14 +74,6 @@ private:
     float                              depth_factor_;
     float                              tcg_limit_;
 
-    // Gates
-    float                              gate_front_wall_;
-    float                              depth_to_skip_;
-    float                              gate_back_wall_;
-    float                              max_depth_;
-    bool                               zero_to_front_wall_;
-    bool                               show_front_wall_;
-
     // Input
     PeakHandler                        peak_handler_;
     const PeakHandler::OutputFormat*   ltpa_data_ptr_;
