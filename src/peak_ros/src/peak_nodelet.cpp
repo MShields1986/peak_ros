@@ -51,15 +51,6 @@ void PeakNodelet::onInit()
     depth_to_skip_ = depth_to_skip_ * 0.001f;
     max_depth_ = max_depth_ * 0.001f;
 
-    PeakNodelet::paramHandler(ns_ + "/settings/gates/gate_front_wall", gate_front_wall_);
-    PeakNodelet::paramHandler(ns_ + "/settings/gates/depth_to_skip", depth_to_skip_);
-    PeakNodelet::paramHandler(ns_ + "/settings/gates/gate_back_wall", gate_back_wall_);
-    PeakNodelet::paramHandler(ns_ + "/settings/gates/max_depth", max_depth_);
-    PeakNodelet::paramHandler(ns_ + "/settings/gates/zero_to_front_wall", zero_to_front_wall_);
-    PeakNodelet::paramHandler(ns_ + "/settings/gates/show_front_wall", show_front_wall_);
-    depth_to_skip_ = depth_to_skip_ * 0.001f;
-    max_depth_ = max_depth_ * 0.001f;
-
     initHardware();
 
     prePopulateAScanMessage();
