@@ -119,33 +119,34 @@ path = f"{package_path}/bags/"
 # files = [file]
 
 os.chdir(path)
-files = glob.glob("fixed_*")
+#files = glob.glob("fixed_*")
 
-for file in files:
-    print(f'Processing: {file}')
+#for file in files:
+file = "fixed_peak_recording_2025-06-10-18-42-55.bag"
+print(f'Processing: {file}')
 
-    # Time Windowing on 'ROS Time (s)'
-    time_windowing = False
-    
-    if time_windowing == True:
-        # Arm Motions
-        t_min = 1.692628e9 + 395
-        t_max = 1.692628e9 + 422
-    
-        start_time = rospy.Time(t_min)
-        end_time = rospy.Time(t_max)
-    else:
-        start_time = None
-        end_time = None
-    
-    # Parsing
-    bag_file = path + file
-    bag = rosbag.Bag(bag_file)
-    
-    topics = bag.get_type_and_topic_info()[1].keys()
-    
-    a_scan_data = observation_bag2dataframe(bag, start_time=start_time, end_time=end_time)
-    b_scan_data = bscan_bag2dataframe(bag, start_time=start_time, end_time=end_time)
+# Time Windowing on 'ROS Time (s)'
+time_windowing = False
 
-    a_scan_data.to_csv(path_or_buf=file+"_ascan.csv", sep=',', header=True, index=False)
-    b_scan_data.to_csv(path_or_buf=file+"_bscan.csv", sep=',', header=True, index=False)
+if time_windowing == True:
+    # Arm Motions
+    t_min = 1.692628e9 + 395
+    t_max = 1.692628e9 + 422
+
+    start_time = rospy.Time(t_min)
+    end_time = rospy.Time(t_max)
+else:
+    start_time = None
+    end_time = None
+
+# Parsing
+bag_file = path + file
+bag = rosbag.Bag(bag_file)
+
+topics = bag.get_type_and_topic_info()[1].keys()
+
+#a_scan_data = observation_bag2dataframe(bag, start_time=start_time, end_time=end_time)
+b_scan_data = bscan_bag2dataframe(bag, start_time=start_time, end_time=end_time)
+
+#a_scan_data.to_csv(path_or_buf=file+"_ascan.csv", sep=',', header=True, index=False)
+b_scan_data.to_csv(path_or_buf=file+"_bscan.csv", sep=',', header=True, index=False)
