@@ -72,3 +72,8 @@ Streaming rates can be set in the [config file](src/peak_ros/config/default.yaml
 
 ## Bugs and Feature Requests
 Please report bugs and request features using the [Issue Tracker](https://github.com/MShields1986/peak_ros/issues).
+
+## Funding
+The authors acknowledge the support of:
+- RCSRF1920/10/32; Spirit Aerosystems/Royal Academy of Engineering Research Chair “In-process Non-destructive Testing for Aerospace Structures”
+- Research Centre for Non-Destructive Evaluation Technology Transfer Project Scheme
