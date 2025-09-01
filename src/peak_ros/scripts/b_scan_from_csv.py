@@ -8,101 +8,232 @@ import matplotlib.pyplot as plt
 # from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 # path = "/home/matthew/Desktop/phd_workspaces/kuka_kmr_driver/catkin_ws/src/peak_ros/src/peak_ros/bags/"
-path = "/media/matthew/b2603e49-ec47-413e-94db-d319afa80e0a/home/matthew/Desktop/phd_data/ut/"
+# path = "/media/matthew/b2603e49-ec47-413e-94db-d319afa80e0a/home/matthew/Desktop/phd_data/ut/"
+path = "/home/matthew/Downloads/ut/"
 file = "fixed_peak_recording_2025-06-10-18-42-55_bscan.csv"
+
+print(f"Reading in data from {path}{file}")
+print(f"This may take a while...")
 
 chunk = pd.read_csv(f'{path}{file}', sep=',', chunksize=1000)
 data = pd.concat(chunk)
 
 # #######################################################################################
-# Going to need to get the time stamps or observation no. of pcl_crop_box_2 to ltpa 0.4 m
+# Old manual observation extraction
+# obs = [120,
+#        970,
+#        1800,
+#        2652,
+#        3496,
+#        4400, # approx from here on
+#        5300,
+#        6200,
+#        7100,
+#        8000]
 # #######################################################################################
-# Max len(data)
-obs = [120,
-       970,
-       1800,
-       2652,
-       3496,
-       4400, # approx from here on
-       5300,
-       6200,
-       7100,
-       8000]
+"""
+x = 0.4 m
+  ┌──────┬─────────┬───────────────────┬────────┬───────────┐
+  │ Pass │ Obs No. │ ROS Timestamp (s) │ x i(m) │ Row y (m) │
+  ├──────┼─────────┼───────────────────┼────────┼───────────┤
+  │ 1    │ 122     │ 1749577529.442534 │ 0.3990 │ 0.1163    │
+  ├──────┼─────────┼───────────────────┼────────┼───────────┤
+  │ 2    │ 970     │ 1749577648.092497 │ 0.3998 │ 0.1575    │
+  ├──────┼─────────┼───────────────────┼────────┼───────────┤
+  │ 3    │ 1808    │ 1749577769.242481 │ 0.3996 │ 0.2036    │
+  ├──────┼─────────┼───────────────────┼────────┼───────────┤
+  │ 4    │ 2650    │ 1749577891.894673 │ 0.4001 │ 0.2494    │
+  ├──────┼─────────┼───────────────────┼────────┼───────────┤
+  │ 5    │ 3494    │ 1749578015.642545 │ 0.4009 │ 0.2990    │
+  ├──────┼─────────┼───────────────────┼────────┼───────────┤
+  │ 6    │ 4340    │ 1749578143.592583 │ 0.3987 │ 0.3400    │
+  ├──────┼─────────┼───────────────────┼────────┼───────────┤
+  │ 7    │ 5182    │ 1749578272.492881 │ 0.3998 │ 0.3745    │
+  ├──────┼─────────┼───────────────────┼────────┼───────────┤
+  │ 8    │ 6026    │ 1749578399.394589 │ 0.4002 │ 0.4309    │
+  ├──────┼─────────┼───────────────────┼────────┼───────────┤
+  │ 9    │ 6871    │ 1749578526.893672 │ 0.3989 │ 0.4808    │
+  ├──────┼─────────┼───────────────────┼────────┼───────────┤
+  │ 10   │ 7709    │ 1749578657.092602 │ 0.4005 │ 0.5173    │
+  └──────┴─────────┴───────────────────┴────────┴───────────┘
 
-x_biglist = []
-y_biglist = []
-z_biglist = []
-amp_biglist = []
+x = 1.0 m
+  ┌──────┬─────────┬───────────────────┬────────┬───────────┐
+  │ Pass │ Obs No. │ ROS Timestamp (s) │ x (m)  │ Row y (m) │
+  ├──────┼─────────┼───────────────────┼────────┼───────────┤
+  │ 1    │ 363     │ 1749577541.492531 │ 0.9993 │ 0.1259    │
+  ├──────┼─────────┼───────────────────┼────────┼───────────┤
+  │ 2    │ 1211    │ 1749577660.143117 │ 0.9995 │ 0.1644    │
+  ├──────┼─────────┼───────────────────┼────────┼───────────┤
+  │ 3    │ 2049    │ 1749577781.292580 │ 1.0009 │ 0.2094    │
+  ├──────┼─────────┼───────────────────┼────────┼───────────┤
+  │ 4    │ 2891    │ 1749577903.942820 │ 0.9989 │ 0.2550    │
+  ├──────┼─────────┼───────────────────┼────────┼───────────┤
+  │ 5    │ 3735    │ 1749578027.693453 │ 0.9992 │ 0.3043    │
+  ├──────┼─────────┼───────────────────┼────────┼───────────┤
+  │ 6    │ 4580    │ 1749578155.595843 │ 1.0002 │ 0.3478    │
+  ├──────┼─────────┼───────────────────┼────────┼───────────┤
+  │ 7    │ 5424    │ 1749578284.597377 │ 1.0002 │ 0.3844    │
+  ├──────┼─────────┼───────────────────┼────────┼───────────┤
+  │ 8    │ 6266    │ 1749578411.392560 │ 1.0009 │ 0.4432    │
+  ├──────┼─────────┼───────────────────┼────────┼───────────┤
+  │ 9    │ 7109    │ 1749578538.793243 │ 0.9996 │ 0.4859    │
+  ├──────┼─────────┼───────────────────┼────────┼───────────┤
+  │ 10   │ 7946    │ 1749578668.943014 │ 0.9991 │ 0.5229    │
+  └──────┴─────────┴───────────────────┴────────┴───────────┘
 
-pass_counter = 0
-for obs_i in obs:
-    # Step 1: Safely evaluate the literal into bytes
-    lit_data = ast.literal_eval(data['Data'][obs_i])
-    
-    # Step 2: Parse into floats (example with 32-bit little-endian)
-    points = struct.unpack(f"<{len(lit_data)//4}f", lit_data[:(len(lit_data)//4)*4])
-    
-    x_list = []
-    y_list = []
-    z_list = []
-    amp_list = []
-    
-    counter = 1
-    for point in points:
-        if counter == 1:
-            x_list.append(point)
-            x_biglist.append(point)
-            counter+=1
-        elif counter == 2:
-            y_list.append(point)
-            y_biglist.append(point + pass_counter * 0.05016)
-            counter+=1
-        elif counter == 3:
-            z_list.append(point)
-            z_biglist.append(point / 2940 * 1000 * 1000) # m to us
-            counter+=1
-        elif counter == 4:
-            amp_list.append(point)
-            amp_biglist.append(point)
-            counter = 1
-            
-    pass_counter += 1
+x = 1.5 m
+  ┌──────┬─────────┬───────────────────┬────────┬───────────┐
+  │ Pass │ Obs No. │ ROS Timestamp (s) │ x (m)  │ Row y (m) │
+  ├──────┼─────────┼───────────────────┼────────┼───────────┤
+  │ 1    │ 565     │ 1749577551.592760 │ 1.5001 │ 0.1303    │
+  ├──────┼─────────┼───────────────────┼────────┼───────────┤
+  │ 2    │ 1411    │ 1749577670.145207 │ 1.4992 │ 0.1688    │
+  ├──────┼─────────┼───────────────────┼────────┼───────────┤
+  │ 3    │ 2247    │ 1749577791.193142 │ 1.4995 │ 0.2015    │
+  ├──────┼─────────┼───────────────────┼────────┼───────────┤
+  │ 4    │ 3089    │ 1749577913.842642 │ 1.5009 │ 0.2557    │
+  ├──────┼─────────┼───────────────────┼────────┼───────────┤
+  │ 5    │ 3933    │ 1749578037.593443 │ 1.5000 │ 0.3102    │
+  ├──────┼─────────┼───────────────────┼────────┼───────────┤
+  │ 6    │ 4780    │ 1749578165.592779 │ 1.5009 │ 0.3528    │
+  ├──────┼─────────┼───────────────────┼────────┼───────────┤
+  │ 7    │ 5623    │ 1749578294.547813 │ 1.4998 │ 0.3893    │
+  ├──────┼─────────┼───────────────────┼────────┼───────────┤
+  │ 8    │ 6467    │ 1749578421.442542 │ 1.4993 │ 0.4441    │
+  ├──────┼─────────┼───────────────────┼────────┼───────────┤
+  │ 9    │ 7309    │ 1749578548.794176 │ 1.4997 │ 0.4915    │
+  ├──────┼─────────┼───────────────────┼────────┼───────────┤
+  │ 10   │ 8146    │ 1749578678.942744 │ 1.5008 │ 0.5264    │
+  └──────┴─────────┴───────────────────┴────────┴───────────┘
 
-lines = [1 * 0.05016,
-         2 * 0.05016,
-         3 * 0.05016,
-         4 * 0.05016,
-         5 * 0.05016,
-         6 * 0.05016,
-         7 * 0.05016,
-         8 * 0.05016,
-         9 * 0.05016]
+x = 2.0 m
+  ┌──────┬─────────┬───────────────────┬────────┬───────────┐
+  │ Pass │ Obs No. │ ROS Timestamp (s) │ x (m)  │ Row y (m) │
+  ├──────┼─────────┼───────────────────┼────────┼───────────┤
+  │ 1    │ 766     │ 1749577561.643600 │ 2.0008 │ 0.1187    │
+  ├──────┼─────────┼───────────────────┼────────┼───────────┤
+  │ 2    │ 1611    │ 1749577680.145243 │ 1.9994 │ 0.1744    │
+  ├──────┼─────────┼───────────────────┼────────┼───────────┤
+  │ 3    │ 2449    │ 1749577801.292537 │ 2.0001 │ 0.2053    │
+  ├──────┼─────────┼───────────────────┼────────┼───────────┤
+  │ 4    │ 3290    │ 1749577923.892556 │ 1.9995 │ 0.2638    │
+  ├──────┼─────────┼───────────────────┼────────┼───────────┤
+  │ 5    │ 4137    │ 1749578047.793420 │ 2.0006 │ 0.3102    │
+  ├──────┼─────────┼───────────────────┼────────┼───────────┤
+  │ 6    │ 4981    │ 1749578175.642618 │ 1.9996 │ 0.3623    │
+  ├──────┼─────────┼───────────────────┼────────┼───────────┤
+  │ 7    │ 5822    │ 1749578304.492782 │ 1.9992 │ 0.3864    │
+  ├──────┼─────────┼───────────────────┼────────┼───────────┤
+  │ 8    │ 6667    │ 1749578431.443476 │ 1.9990 │ 0.4330    │
+  ├──────┼─────────┼───────────────────┼────────┼───────────┤
+  │ 9    │ 7508    │ 1749578558.742887 │ 1.9989 │ 0.5107    │
+  ├──────┼─────────┼───────────────────┼────────┼───────────┤
+  │ 10   │ 8345    │ 1749578688.892668 │ 1.9998 │ 0.5341    │
+  └──────┴─────────┴───────────────────┴────────┴───────────┘
+"""
 
-dpi = 300
+# x = 0.4
+obs_04 = [122, 970, 1808, 2650, 3494, 4340, 5182, 6026, 6871, 7709]
+# x = 1.0
+obs_10 = [363, 1211, 2049, 2891, 3735, 4580, 5424, 6266, 7109, 7946]
+# x = 1.5
+obs_15 = [565, 1411, 2247, 3089, 3933, 4780, 5623, 6467, 7309, 8146]
+# x = 2.0
+obs_20 = [766, 1611, 2449, 3290, 4137, 4981, 5822, 6667, 7508, 8345]
 
-X = y_biglist
-Y = z_biglist
-Z = amp_biglist
+obs_set = ["0.4", "1.0", "1.5", "2.0"]
 
-try:
-    plt.figure(figsize=(9, 5), dpi=dpi)
-    plt.gca().invert_yaxis()
-    plt.tricontourf(X, Y, Z, 800, cmap='viridis', vmin=-1.0, vmax=1.0)
-    plt.colorbar(label="Normalised Amplitude",
-                 ticks=np.arange(-1.0, 1.0, 0.2, dtype=np.float32),
-                 boundaries=[-1.0, 1.05]
-                 )
-    plt.vlines(lines, ymin=min(Y), ymax=max(Y), colors='k', linestyles='--')
-    plt.title("10 B-Scans at Specimen Position 0.4 m")
-#    plt.title(f"B Scan at Time {str(round(data['ROS Time Sent (s)'][obs_i], 3))} s")
-    plt.xlabel("Array Axis [m]")
-    plt.ylabel("Time [us]")
-    plt.tight_layout()
-    #plt.show()
-    path = "/home/matthew/Desktop/PhD/bindt_2025_presentation/"
-    plt.savefig(f'{path}images/bscan_composite_01.png', dpi=dpi)
+for distance_str in obs_set:
+    if distance_str == "0.4":
+        obs = obs_04
+    elif distance_str == "1.0":
+        obs = obs_10
+    elif distance_str == "1.5":
+        obs = obs_15
+    elif distance_str == "2.0":
+        obs = obs_20
 
-except Exception as e:
-    print(f"Unable to plot exploratory b scan: {e}")
-    pass
-plt.close()
+    print(f"Working on composite B-Scan at position {distance_str} m")
+
+    x_biglist = []
+    y_biglist = []
+    z_biglist = []
+    amp_biglist = []
+
+    pass_counter = 0
+    for obs_i in obs:
+        # Step 1: Safely evaluate the literal into bytes
+        lit_data = ast.literal_eval(data['Data'][obs_i])
+
+        # Step 2: Parse into floats (example with 32-bit little-endian)
+        points = struct.unpack(f"<{len(lit_data)//4}f", lit_data[:(len(lit_data)//4)*4])
+
+        x_list = []
+        y_list = []
+        z_list = []
+        amp_list = []
+
+        counter = 1
+        for point in points:
+            if counter == 1:
+                x_list.append(point)
+                x_biglist.append(point)
+                counter+=1
+            elif counter == 2:
+                y_list.append(point)
+                y_biglist.append(point + pass_counter * 0.05016)
+                counter+=1
+            elif counter == 3:
+                z_list.append(point)
+                z_biglist.append(point / 2940 * 1000 * 1000) # m to us
+                counter+=1
+            elif counter == 4:
+                amp_list.append(point)
+                amp_biglist.append(point)
+                counter = 1
+
+        pass_counter += 1
+
+    lines = [1 * 0.05016,
+             2 * 0.05016,
+             3 * 0.05016,
+             4 * 0.05016,
+             5 * 0.05016,
+             6 * 0.05016,
+             7 * 0.05016,
+             8 * 0.05016,
+             9 * 0.05016]
+
+    dpi = 300
+
+    X = y_biglist
+    Y = z_biglist
+    Z = amp_biglist
+
+    try:
+        plt.figure(figsize=(9, 5), dpi=dpi)
+        plt.gca().invert_yaxis()
+        plt.tricontourf(X, Y, Z, 800, cmap='viridis', vmin=-1.0, vmax=1.0)
+        plt.colorbar(label="Normalised Amplitude",
+                     ticks=np.arange(-1.0, 1.0, 0.2, dtype=np.float32),
+                     boundaries=[-1.0, 1.05]
+                     )
+        plt.vlines(lines, ymin=min(Y), ymax=max(Y), colors='k', linestyles='--')
+        plt.title(f"10 B-Scans at Specimen Position {distance_str} m")
+    #    plt.title(f"B Scan at Time {str(round(data['ROS Time Sent (s)'][obs_i], 3))} s")
+        plt.xlabel("Array Axis [m]")
+        plt.ylabel("Time [us]")
+        plt.tight_layout()
+        #plt.show()
+        path = "/home/matthew/Desktop/"
+        plt.savefig(f'{path}bscan_composite_{distance_str}.png', dpi=dpi)
+
+    except Exception as e:
+        print(f"Unable to plot composite b scan: {e}")
+        pass
+    plt.close()
+
+    print(f"Completed composite B-Scan at position {distance_str} m")
+
+print(f"All Done!")

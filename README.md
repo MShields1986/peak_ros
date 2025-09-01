@@ -1,3 +1,5 @@
+[![docker_ci](https://github.com/MShields1986/peak_ros/actions/workflows/industrial_ci_action.yml/badge.svg)](https://github.com/MShields1986/peak_ros/actions/workflows/industrial_ci_action.yml)
+
 # peak_ros
 ROS driver for use with PEAK MicroPulse devices.
 
