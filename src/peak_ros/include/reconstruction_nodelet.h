@@ -49,8 +49,9 @@ private:
 
     ros::Timer                              timer_;
 
-    sensor_msgs::PointCloud2                point_cloud_;
-    std::deque<sensor_msgs::PointCloud2>    buffer_;
+    sensor_msgs::PointCloud2                              point_cloud_;
+    sensor_msgs::PointCloud2                              output_pointcloud2_;
+    std::deque<sensor_msgs::PointCloud2::ConstPtr>        buffer_;
 
     bool                                    use_tf_;
     uint32_t                                b_scan_count_;

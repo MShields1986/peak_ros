@@ -3,16 +3,15 @@
 # peak_ros
 ROS driver for use with PEAK MicroPulse devices.
 
-## Installation
 
-### Docker
+## Quick Start with Docker Compose
 ```bash
 git clone https://github.com/MShields1986/peak_ros.git
 cd peak_ros
 ./run.sh
 ```
 
-### ROS Workspace
+## Installation
 This package depends on tf2-sensor-msgs.
 
 ```bash

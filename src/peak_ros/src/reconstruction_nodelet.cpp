@@ -20,12 +20,12 @@ void ReconstructionNodelet::onInit()
     node_name_ = getName();
     //ns_ = ros::this_node::getNamespace();
 
-    subscriber_ = nh_.subscribe("input", 100, &ReconstructionNodelet::callback, this);
+    subscriber_ = nh_.subscribe("input", 10, &ReconstructionNodelet::callback, this);
     publisher_ = nh_.advertise<sensor_msgs::PointCloud2>("output", 10, true);
     publish_service_ = nh_.advertiseService(ns_ + "/publish_volume", &ReconstructionNodelet::publishSrvCb, this);
     
     ReconstructionNodelet::paramHandler(ns_ + "/settings/reconstruction/process_rate", rate_);
-    timer_ = nh_.createTimer(ros::Duration(1 / rate_), &ReconstructionNodelet::timerCb, this);
+    timer_ = nh_.createTimer(ros::Duration(1.0 / (double)rate_), &ReconstructionNodelet::timerCb, this);
 
     ReconstructionNodelet::paramHandler(ns_ + "/settings/reconstruction/use_tf", use_tf_);
     ReconstructionNodelet::paramHandler(ns_ + "/settings/reconstruction/recon_frame_id", recon_frame_id_);
@@ -79,7 +79,7 @@ void ReconstructionNodelet::initialisePointcloud() {
 
 
 void ReconstructionNodelet::callback(const sensor_msgs::PointCloud2::ConstPtr& msg) {
-    buffer_.push_back(*msg);
+    buffer_.push_back(msg);
 }
 
 
@@ -104,8 +104,7 @@ void ReconstructionNodelet::timerCb(const ros::TimerEvent& /*event*/) {
     NODELET_INFO_STREAM_THROTTLE(600, node_name_ << ": Node running");
 
     if (!buffer_.empty()) {
-        sensor_msgs::PointCloud2* msg = &buffer_.front();
-        sensor_msgs::PointCloud2 output_pointcloud2;
+        const sensor_msgs::PointCloud2::ConstPtr& msg = buffer_.front();
 
         ////////////////////////////////////////////////////////////////////////////////////////////
         // Live full 3D reconstruction
@@ -121,25 +120,21 @@ void ReconstructionNodelet::timerCb(const ros::TimerEvent& /*event*/) {
                                                    ros::Duration(3.0)    // time out
                                                    );
 
-                tf2::doTransform<sensor_msgs::PointCloud2>(*msg, output_pointcloud2, trans_);
+                tf2::doTransform<sensor_msgs::PointCloud2>(*msg, output_pointcloud2_, trans_);
 
-                point_cloud_.width += output_pointcloud2.width;
-                uint64_t prev_size = point_cloud_.data.size();
-                point_cloud_.data.resize(point_cloud_.data.size() + output_pointcloud2.data.size());
-
-                std::copy(
-                    output_pointcloud2.data.begin(),
-                    output_pointcloud2.data.end(),
-                    point_cloud_.data.begin() + prev_size);
+                point_cloud_.width += output_pointcloud2_.width;
+                point_cloud_.data.insert(point_cloud_.data.end(),
+                    output_pointcloud2_.data.begin(),
+                    output_pointcloud2_.data.end());
 
                 point_cloud_.header.stamp = msg->header.stamp;
 
                 buffer_.pop_front();
 
             } catch (tf2::TransformException& ex) {
-                NODELET_WARN_STREAM(node_name_ << 
-                    ": Could not find transform " << recon_frame_id_ << 
-                    " to " << msg->header.frame_id << 
+                NODELET_WARN_STREAM(node_name_ <<
+                    ": Could not find transform " << recon_frame_id_ <<
+                    " to " << msg->header.frame_id <<
                     ": " << ex.what());
             }
 
@@ -204,20 +199,16 @@ void ReconstructionNodelet::timerCb(const ros::TimerEvent& /*event*/) {
                 }
             }
 
-            tf2::doTransform<sensor_msgs::PointCloud2>(*msg, output_pointcloud2, trans_);
+            tf2::doTransform<sensor_msgs::PointCloud2>(*msg, output_pointcloud2_, trans_);
 
             // NODELET_INFO_STREAM_THROTTLE(10, node_name_ << ": transform translation x: " << trans_.transform.translation.x);
             // NODELET_INFO_STREAM_THROTTLE(10, node_name_ << ": transform translation y: " << trans_.transform.translation.y);
             // NODELET_INFO_STREAM_THROTTLE(10, node_name_ << ": transform translation z: " << trans_.transform.translation.z);
 
-            point_cloud_.width += output_pointcloud2.width;
-            uint64_t prev_size = point_cloud_.data.size();
-            point_cloud_.data.resize(point_cloud_.data.size() + output_pointcloud2.data.size());
-
-            std::copy(
-                output_pointcloud2.data.begin(),
-                output_pointcloud2.data.end(),
-                point_cloud_.data.begin() + prev_size);
+            point_cloud_.width += output_pointcloud2_.width;
+            point_cloud_.data.insert(point_cloud_.data.end(),
+                output_pointcloud2_.data.begin(),
+                output_pointcloud2_.data.end());
 
             point_cloud_.header.stamp = msg->header.stamp;
 

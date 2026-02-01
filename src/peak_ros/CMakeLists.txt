@@ -251,11 +251,24 @@ target_link_libraries(${EXECUTABLE_NAME} ${catkin_LIBRARIES})
 ## Testing ##
 #############
 
-## Add gtest based cpp test target and link libraries
-# catkin_add_gtest(${PROJECT_NAME}-test test/test_peak_ros.cpp)
-# if(TARGET ${PROJECT_NAME}-test)
-#   target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME})
-# endif()
+if(CATKIN_ENABLE_TESTING)
+  find_package(rostest REQUIRED)
 
-## Add folders to be run by python nosetests
-# catkin_add_nosetests(test)
+  # Build MockPeakHardware from the fetched peak_micropulse_driver source
+  add_subdirectory(
+    ${peak_micropulse_SOURCE_DIR}/mock_hardware
+    ${peak_micropulse_BINARY_DIR}/mock_hardware
+  )
+
+  catkin_add_gtest(${PROJECT_NAME}-integration-test
+    test/test_peak_nodelet_integration.cpp
+  )
+  target_link_libraries(${PROJECT_NAME}-integration-test
+    ${PROJECT_NAME}_nodelets
+    MockPeakHardware
+    ${catkin_LIBRARIES}
+  )
+  target_compile_definitions(${PROJECT_NAME}-integration-test PRIVATE
+    MPS_DIR="${CMAKE_CURRENT_SOURCE_DIR}/mps"
+  )
+endif()

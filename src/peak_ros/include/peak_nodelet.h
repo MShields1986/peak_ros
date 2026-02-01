@@ -2,6 +2,8 @@
 
 #include <cmath>
 #include <signal.h>
+#include <atomic>
+#include <mutex>
 
 #include <ros/ros.h>
 #include <ros/package.h>
@@ -27,7 +29,7 @@ namespace peak_namespace {
 class PeakNodelet : public nodelet::Nodelet {
 public:
     PeakNodelet();
-    //~PeakNode();
+    ~PeakNodelet();
 
 private:
     virtual void                       onInit();
@@ -44,9 +46,11 @@ private:
     bool                               takeMeasurementSrvCb(peak_ros::TakeSingleMeasurement::Request& request,
                                                             peak_ros::TakeSingleMeasurement::Response& response);
     void                               takeMeasurement();
+    void                               processMeasurement();
     void                               populateAScanMessage();
     void                               populateBScanMessage(const peak_ros::Observation& obs_msg);
     void                               timerCb(const ros::TimerEvent& /*event*/);
+    void                               onDataReady(bool valid);
 
     ros::NodeHandle                    nh_;
     ros::Rate                          rate_;
@@ -76,16 +80,24 @@ private:
     bool                               zero_to_front_wall_;
     bool                               show_front_wall_;
 
+    // Precomputed B-scan lookup tables (built once after config is set)
+    void                               precomputeBScanLookups();
+    std::vector<float>                 z_lookup_;      // z_lookup_[i] = depth for sample i
+    std::vector<float>                 y_lookup_;      // y_lookup_[e] = y position for element e
+    std::vector<float>                 tcg_gain_;      // tcg_gain_[i] = TCG multiplier for sample i
+    bool                               lookups_valid_{false};
+
     // Input
     PeakHandler                        peak_handler_;
-    const PeakHandler::OutputFormat*   ltpa_data_ptr_;
+    PeakHandler::OutputFormat          latest_data_;
 
     // Output
     peak_ros::Observation              ltpa_msg_;
     sensor_msgs::PointCloud2           bscan_cloud_;
     sensor_msgs::PointCloud2           gated_bscan_cloud_;
 
-    bool                               stream_;
+    std::atomic<bool>                  stream_{false};
+    std::mutex                         processing_mutex_;
 
     ros::Publisher                     ascan_publisher_;
     ros::Publisher                     bscan_publisher_;
