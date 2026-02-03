@@ -1,8 +1,21 @@
 [![docker_ci](https://github.com/MShields1986/peak_ros/actions/workflows/industrial_ci_action.yml/badge.svg)](https://github.com/MShields1986/peak_ros/actions/workflows/industrial_ci_action.yml)
 
 # peak_ros
-ROS driver for use with PEAK MicroPulse devices.
+ROS driver for use with Peak MicroPulse devices.
 
+## Citation
+If you use this repository for your research, please cite the following conference where it was first shared.
+
+    @conference{shields2025bindt,
+        title = "Process-to-part phased array inspection of a large scale composite aerospace specimen",
+        keywords = "non-destructive testing, robotic NDT, process-to-part, array inspection", author = "Matthew Shields and \{Wathavana Vithanage\}, \{Randika Kosala\} and Gareth Pierce and Gavin Munro and Tom O'Hare and Michael Grosser and Janet O'Brien-O'Reilly",
+        year = "2025",
+        month = sep,
+        day = "10",
+        note = "62nd Annual British Conference on NDT, NDT 2025 ;
+        Conference date: 09-09-2025 Through 11-09-2025",
+        url = "https://www.bindt.org/events-and-awards/ndt-2025/",
+    }
 
 ## Quick Start with Docker Compose
 ```bash

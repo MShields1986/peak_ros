@@ -51,5 +51,12 @@ qtcreator-*
 CATKIN_IGNORE
 
 *.bag
+*.bag.active
 *.csv
+*.pcd
+*.ply
+*.mkv
+*.mp4
+*.bin
+*.mfmc
 src/peak_ltpa/bags

@@ -218,7 +218,8 @@ bool PeakNodelet::streamDataSrvCb(peak_ros::StreamData::Request& request,
     if (request.stream_data) {
         stream_ = true;
         peak_handler_.startAsyncAcquisition(
-            [this](bool valid) { onDataReady(valid); });
+            [this](bool valid) { onDataReady(valid); },
+            acquisition_rate_);
         response.success = true;
         return true;
     } else {
