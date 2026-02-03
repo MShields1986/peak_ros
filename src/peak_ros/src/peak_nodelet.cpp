@@ -218,7 +218,8 @@ bool PeakNodelet::streamDataSrvCb(peak_ros::StreamData::Request& request,
     if (request.stream_data) {
         stream_ = true;
         peak_handler_.startAsyncAcquisition(
-            [this](bool valid) { onDataReady(valid); });
+            [this](bool valid) { onDataReady(valid); },
+            acquisition_rate_);
         response.success = true;
         return true;
     } else {
@@ -383,11 +384,13 @@ void PeakNodelet::populateBScanMessage(const peak_ros::Observation& obs_msg) {
         float   amp_back_wall    = nan_value;
         float   depth_back_wall  = nan_value;
 
-        y = lookups_valid_ ? y_lookup_[element_i] : (float)element_i * (float)obs_msg.element_pitch * 0.001f;
-
         int i = 0;
         for (auto amplitude : ascan.amplitudes) {
             x = 0.0f;
+            // y/z reassigned every iteration: the gating logic below clobbers
+            // x/y/z with nan_value for the gated cloud, so they must be reset
+            // per-sample or the NaN persists into the next b-scan point.
+            y = lookups_valid_ ? y_lookup_[element_i] : (float)element_i * (float)obs_msg.element_pitch * 0.001f;
             z = lookups_valid_ ? z_lookup_[i] : 0.0f;
 
             if (lookups_valid_ && tcg_gain_[i] != 1.0f) {
