@@ -1,4 +1,4 @@
-Header header
+std_msgs/Header header
 
 # LTPA Configuration
 int32 dof
@@ -23,6 +23,6 @@ float64                         couplant_depth        # mm
 float64                         specimen_depth        # mm
 
 # LTPA Data
-peak_ros/Ascan[] ascans
+Ascan[] ascans
 
 int32 max_amplitude

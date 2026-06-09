@@ -1,36 +1,34 @@
 ##############
 # Base image #
 ##############
-FROM osrf/ros:noetic-desktop-full as base
-# FROM ros:noetic-ros-base as base
-# FROM ros:noetic-robot as base
+FROM osrf/ros:rolling-desktop-full AS base
+# FROM ros:rolling-ros-base AS base
 
-ARG CATKIN_WORKSPACE_DIR=${CATKIN_WORKSPACE_DIR}
+ARG ROS2_WORKSPACE_DIR=${ROS2_WORKSPACE_DIR}
 
 SHELL ["/bin/bash", "-c"]
 
 RUN apt update \
   && apt install -y \
   git \
-  python3-catkin-tools \
-  python3-osrf-pycommon \  
-#  ros-noetic-pcl-ros \
-#  ros-noetic-pcl-conversions \
-#  ros-noetic-pcl-msgs \
-  ros-noetic-tf2-sensor-msgs \
-  ros-noetic-tf2
+  build-essential \
+  python3-colcon-common-extensions \
+  ros-rolling-pcl-ros \
+  ros-rolling-tf2-sensor-msgs \
+  ros-rolling-tf2 \
+  && rm -rf /var/lib/apt/lists/*
 
-COPY ../src ${CATKIN_WORKSPACE_DIR}/src
+COPY src ${ROS2_WORKSPACE_DIR}/src
 
-WORKDIR ${CATKIN_WORKSPACE_DIR}
+WORKDIR ${ROS2_WORKSPACE_DIR}
 
-RUN source /opt/ros/noetic/setup.bash \
- && rosdep install -i --from-path src --rosdistro noetic -y \
- && catkin build \
- && echo 'source ${CATKIN_WORKSPACE_DIR}/devel/setup.bash' >> /ros_entrypoint.sh
+RUN source /opt/ros/rolling/setup.bash \
+ && rosdep update \
+ && rosdep install -i --from-path src --rosdistro rolling -y \
+ && colcon build --symlink-install \
+ && echo "source ${ROS2_WORKSPACE_DIR}/install/setup.bash" >> /ros_entrypoint.sh
 
 RUN sed -i '/exec "$@"/d' /ros_entrypoint.sh \
  && echo 'exec "$@"' >> /ros_entrypoint.sh
 
 ENTRYPOINT [ "/ros_entrypoint.sh" ]
-

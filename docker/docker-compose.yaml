@@ -7,7 +7,7 @@ services:
       dockerfile: docker/Dockerfile
       target: base
       args:
-        - CATKIN_WORKSPACE_DIR=${CATKIN_WORKSPACE_DIR}
+        - ROS2_WORKSPACE_DIR=${ROS2_WORKSPACE_DIR}
     #deploy:
     #  resources:
     #    limits:
@@ -21,15 +21,12 @@ services:
     privileged: true
     environment:
       - DISPLAY
-      - 'CATKIN_WORKSPACE_DIR=${CATKIN_WORKSPACE_DIR}'
-      - 'ROS_MASTER_URI=${ROS_MASTER_URI}'
-      - 'ROS_HOSTNAME=${ROS_HOSTNAME}'
-      #- 'ROS_IP=${ROS_IP}
-    #extra_hosts:
-      #- "ETC_HOSTNAME_1:ETC_HOST_IP_1"
+      - 'ROS2_WORKSPACE_DIR=${ROS2_WORKSPACE_DIR}'
+      - 'ROS_DOMAIN_ID=${ROS_DOMAIN_ID}'
+      - 'RMW_IMPLEMENTATION=${RMW_IMPLEMENTATION}'
     volumes:
       - $XAUTHORITY:/root/.Xauthority
-      - ../src:${CATKIN_WORKSPACE_DIR}/src
+      - ../src:${ROS2_WORKSPACE_DIR}/src
     #command: sleep infinity
-    command: roslaunch peak_ros init.launch
+    command: ros2 launch peak_ros init.launch.xml
     #restart: unless-stopped

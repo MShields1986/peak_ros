@@ -1,109 +1,134 @@
 #!/usr/bin/env python3
 
-# Note that you need to run this on your ROSbag in an environment with the custom messages built
-# https://github.com/gavanderhoorn/rosbag_fixer
-# python rosbag_fixer/fix_bag_msg_def.py -l inbag.bag outbag.bag
+# Parse a ROS 2 bag (sqlite3 or mcap) recorded by peak_ros into CSV.
+# Run this in an environment where the peak_ros interfaces are built and sourced
+# (e.g. `source install/setup.bash`) so the custom messages can be deserialised.
 
-import rosbag   # 1.17
-import rospy    # Not needed unless using time windowing
-import rospkg   # Not needed unless using the package path finding
+import os
 
-import glob, os
-#import numpy as np
 import pandas as pd
-#import matplotlib.pyplot as plt
+
+import rosbag2_py
+from rclpy.serialization import deserialize_message
+from rosidl_runtime_py.utilities import get_message
+from ament_index_python.packages import get_package_share_directory
 
 ###############################################################################
 # Bag Parsing
 ###############################################################################
 
-def ascans_bag2dataframe(bag):
-    a_scans = [ [msg.count,
-                 msg.test_number,
-                 msg.dof,
-                 msg.channel,
-                 msg.amplitudes] for msg in bag ]
+def _open_reader(bag_path):
+    storage_id = "mcap" if bag_path.endswith(".mcap") else "sqlite3"
+    reader = rosbag2_py.SequentialReader()
+    reader.open(
+        rosbag2_py.StorageOptions(uri=bag_path, storage_id=storage_id),
+        rosbag2_py.ConverterOptions(input_serialization_format="cdr",
+                                    output_serialization_format="cdr"),
+    )
+    type_map = {topic.name: topic.type for topic in reader.get_all_topics_and_types()}
+    return reader, type_map
 
-    a_scans = pd.DataFrame(a_scans, columns = ['Count',
-                                               'Test Number',
-                                               'Data Output Format',
-                                               'Channel',
-                                               'Amplitudes'])
+
+def _read_messages(bag_path, topic):
+    reader, type_map = _open_reader(bag_path)
+    msg_type = get_message(type_map[topic])
+    while reader.has_next():
+        (read_topic, data, t_ns) = reader.read_next()
+        if read_topic == topic:
+            yield deserialize_message(data, msg_type), t_ns
+    del reader
+
+
+def _stamp_to_sec(stamp):
+    return stamp.sec + stamp.nanosec * 1e-9
+
+
+def ascans_msgs2dataframe(ascans):
+    a_scans = [[a.count,
+                a.test_number,
+                a.dof,
+                a.channel,
+                a.amplitudes] for a in ascans]
+
+    a_scans = pd.DataFrame(a_scans, columns=['Count',
+                                             'Test Number',
+                                             'Data Output Format',
+                                             'Channel',
+                                             'Amplitudes'])
     return a_scans
 
 
-def observation_bag2dataframe(bag, start_time=None, end_time=None):
-    observation = [ [t.to_sec(),
-                     msg.header.stamp.to_sec(),
-                     msg.header.frame_id,
-                     msg.dof,
-                     msg.gate_start,
-                     msg.gate_end,
-                     msg.ascan_length,
-                     msg.num_ascans,
-                     msg.digitisation_rate,
-                     msg.n_elements,
-                     msg.element_pitch,
-                     msg.inter_element_spacing,
-                     msg.vel_wedge,
-                     msg.vel_couplant,
-                     msg.vel_material,
-                     msg.wedge_angle,
-                     msg.wedge_depth,
-                     msg.couplant_depth,
-                     msg.specimen_depth,
-                     ascans_bag2dataframe(msg.ascans),
-                     # msg.ascans,
-                     msg.max_amplitude] for (topic, msg, t) in bag.read_messages(topics=['/peak/a_scans'], start_time=start_time, end_time=end_time) ]
+def observation_bag2dataframe(bag_path, topic='/peak/a_scans'):
+    observation = [[t_ns * 1e-9,
+                    _stamp_to_sec(msg.header.stamp),
+                    msg.header.frame_id,
+                    msg.dof,
+                    msg.gate_start,
+                    msg.gate_end,
+                    msg.ascan_length,
+                    msg.num_ascans,
+                    msg.digitisation_rate,
+                    msg.n_elements,
+                    msg.element_pitch,
+                    msg.inter_element_spacing,
+                    msg.vel_wedge,
+                    msg.vel_couplant,
+                    msg.vel_material,
+                    msg.wedge_angle,
+                    msg.wedge_depth,
+                    msg.couplant_depth,
+                    msg.specimen_depth,
+                    ascans_msgs2dataframe(msg.ascans),
+                    msg.max_amplitude] for (msg, t_ns) in _read_messages(bag_path, topic)]
 
-    observation = pd.DataFrame(observation, columns = ['ROS Time Recorded (s)',
-                                                       'ROS Time Sent (s)',
-                                                       'Frame ID',
-                                                       'Data Output Format',
-                                                       'Gate Start',
-                                                       'Gate End',
-                                                       'A Scan Length',
-                                                       'Number of A Scans',
-                                                       'Digitisation Rate (Mhz)',
-                                                       'Number of Focal Laws',
-                                                       'Element Pitch (mm)',
-                                                       'Inter Element Spacing (mm)',
-                                                       'Wedge Velocity (m/s)',
-                                                       'Couplant Velocity (m/s)',
-                                                       'Material Velocity (m/s)',
-                                                       'Wedge Angle (deg)',
-                                                       'Wedge Depth (mm)',
-                                                       'Couplant Depth (mm)',
-                                                       'Specimen Depth (mm)',
-                                                       'A Scans',
-                                                       'Max Amplitude'])
+    observation = pd.DataFrame(observation, columns=['ROS Time Recorded (s)',
+                                                     'ROS Time Sent (s)',
+                                                     'Frame ID',
+                                                     'Data Output Format',
+                                                     'Gate Start',
+                                                     'Gate End',
+                                                     'A Scan Length',
+                                                     'Number of A Scans',
+                                                     'Digitisation Rate (Mhz)',
+                                                     'Number of Focal Laws',
+                                                     'Element Pitch (mm)',
+                                                     'Inter Element Spacing (mm)',
+                                                     'Wedge Velocity (m/s)',
+                                                     'Couplant Velocity (m/s)',
+                                                     'Material Velocity (m/s)',
+                                                     'Wedge Angle (deg)',
+                                                     'Wedge Depth (mm)',
+                                                     'Couplant Depth (mm)',
+                                                     'Specimen Depth (mm)',
+                                                     'A Scans',
+                                                     'Max Amplitude'])
     return observation
 
 
-def bscan_bag2dataframe(bag, start_time=None, end_time=None):
-    b_scan = [ [t.to_sec(),
-                msg.header.stamp.to_sec(),
-                msg.header.frame_id,
-                msg.height,
-                msg.width,
-                msg.fields,
-                msg.is_bigendian,
-                msg.point_step,
-                msg.row_step,
-                msg.data,
-                msg.is_dense] for (topic, msg, t) in bag.read_messages(topics=['/peak/b_scan'], start_time=start_time, end_time=end_time) ]
+def bscan_bag2dataframe(bag_path, topic='/peak/b_scan'):
+    b_scan = [[t_ns * 1e-9,
+               _stamp_to_sec(msg.header.stamp),
+               msg.header.frame_id,
+               msg.height,
+               msg.width,
+               msg.fields,
+               msg.is_bigendian,
+               msg.point_step,
+               msg.row_step,
+               bytes(msg.data),
+               msg.is_dense] for (msg, t_ns) in _read_messages(bag_path, topic)]
 
-    b_scan = pd.DataFrame(b_scan, columns = ['ROS Time Recorded (s)',
-                                             'ROS Time Sent (s)',
-                                             'Frame ID',
-                                             'Height',
-                                             'Width',
-                                             'Fields',
-                                             'Is Big Endian',
-                                             'Point Step',
-                                             'Row Step',
-                                             'Data',
-                                             'Is Dense'])
+    b_scan = pd.DataFrame(b_scan, columns=['ROS Time Recorded (s)',
+                                           'ROS Time Sent (s)',
+                                           'Frame ID',
+                                           'Height',
+                                           'Width',
+                                           'Fields',
+                                           'Is Big Endian',
+                                           'Point Step',
+                                           'Row Step',
+                                           'Data',
+                                           'Is Dense'])
     return b_scan
 
 ###############################################################################
@@ -111,42 +136,19 @@ def bscan_bag2dataframe(bag, start_time=None, end_time=None):
 ###############################################################################
 
 # Setup
-package_path = rospkg.RosPack().get_path('peak_ros')
+package_path = get_package_share_directory('peak_ros')
 path = f"{package_path}/bags/"
-# path = "/home/matthew/Desktop/phd_workspaces/kuka_kmr_driver/catkin_ws/src/peak_ros/peak_ros/bags/"
-
-# file = "fixed_GATS_400-700_GANS_256_2025-04-10-15-01-14.bag"
-# files = [file]
 
 os.chdir(path)
-#files = glob.glob("fixed_*")
 
-#for file in files:
-file = "fixed_peak_recording_2025-06-10-18-42-55.bag"
-print(f'Processing: {file}')
-
-# Time Windowing on 'ROS Time (s)'
-time_windowing = False
-
-if time_windowing == True:
-    # Arm Motions
-    t_min = 1.692628e9 + 395
-    t_max = 1.692628e9 + 422
-
-    start_time = rospy.Time(t_min)
-    end_time = rospy.Time(t_max)
-else:
-    start_time = None
-    end_time = None
+# ROS 2 bags are directories (sqlite3) or .mcap files. Point at the bag accordingly.
+bag = "peak_recording_2025-06-10-18-42-55"
+bag_path = path + bag
+print(f'Processing: {bag}')
 
 # Parsing
-bag_file = path + file
-bag = rosbag.Bag(bag_file)
+# a_scan_data = observation_bag2dataframe(bag_path, topic='/peak/a_scans')
+b_scan_data = bscan_bag2dataframe(bag_path, topic='/peak/b_scan')
 
-topics = bag.get_type_and_topic_info()[1].keys()
-
-#a_scan_data = observation_bag2dataframe(bag, start_time=start_time, end_time=end_time)
-b_scan_data = bscan_bag2dataframe(bag, start_time=start_time, end_time=end_time)
-
-#a_scan_data.to_csv(path_or_buf=file+"_ascan.csv", sep=',', header=True, index=False)
-b_scan_data.to_csv(path_or_buf=file+"_bscan.csv", sep=',', header=True, index=False)
+# a_scan_data.to_csv(path_or_buf=bag + "_ascan.csv", sep=',', header=True, index=False)
+b_scan_data.to_csv(path_or_buf=bag + "_bscan.csv", sep=',', header=True, index=False)

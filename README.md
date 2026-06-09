@@ -1,7 +1,7 @@
-[![docker_ci](https://github.com/MShields1986/peak_ros/actions/workflows/industrial_ci_action.yml/badge.svg)](https://github.com/MShields1986/peak_ros/actions/workflows/industrial_ci_action.yml)
+[![industrial_ci](https://github.com/MShields1986/peak_ros/actions/workflows/industrial_ci_action.yml/badge.svg)](https://github.com/MShields1986/peak_ros/actions/workflows/industrial_ci_action.yml)
 
 # peak_ros
-ROS driver for use with Peak MicroPulse devices.
+ROS 2 (Rolling) driver for use with Peak MicroPulse devices.
 
 ## Citation
 If you use this repository for your research, please cite the following conference where it was first shared.
@@ -25,33 +25,34 @@ cd peak_ros
 ```
 
 ## Installation
-This package depends on tf2-sensor-msgs.
+This package depends on `pcl_ros` and `tf2_sensor_msgs`.
 
 ```bash
 sudo apt update
-sudo apt install ros-noetic-tf2-sensor-msgs
-cd catkin_ws/src
+sudo apt install ros-rolling-pcl-ros ros-rolling-tf2-sensor-msgs
+cd ros2_ws/src
 git clone https://github.com/MShields1986/peak_ros.git
 cd ..
-catkin build
+colcon build
+source install/setup.bash
 ```
 
 ## Usage
 
 ```bash
-roslaunch peak_ros init.launch
+ros2 launch peak_ros init.launch.xml
 ```
 
 Call either of the services `/peak/take_single_measurement` or `/peak/stream_data`.
 
 ```bash
-rosservice call /peak/take_single_measurement "take_single_measurement: true"
+ros2 service call /peak/take_single_measurement std_srvs/srv/Trigger {}
 ```
 
 ...or...
 
 ```bash
-rosservice call /peak/stream_data "stream_data: true"
+ros2 service call /peak/stream_data peak_ros/srv/StreamData "{stream_data: true}"
 ```
 
 After this RViz ought to show the current b scan as a pointcloud on `/peak/b_scan`.
@@ -79,7 +80,7 @@ Currently this driver required MPS files to contain the following directives in 
     2. GATS - Needed to determine the length of each a scan
     3. SWP - Needed to determine the number of focal laws (Note, that only a single sweep is currently supported)
 
-Please ensure that your MPS file contains only one of each of these directives and that it accurately reflects what you are trying to achieve. MPS files ought to be placed in the `src/peak_ros/mps` and then modifiy the [launch file](src/peak_ros/launch/init.launch) `mps_file` launch arguement.
+Please ensure that your MPS file contains only one of each of these directives and that it accurately reflects what you are trying to achieve. MPS files ought to be placed in the `src/peak_ros/mps` and then modifiy the [launch file](src/peak_ros/launch/init.launch.xml) `mps_file` launch arguement.
 
 ### Streaming Rates
 Streaming rates can be set in the [config file](src/peak_ros/config/default.yaml). However, please be aware that your mps file will dictate the upper bound for your streaming rate as the number of focal laws and listening time for each focal law, GATS command, dictates the acquisition time needed by the Peak hardware.

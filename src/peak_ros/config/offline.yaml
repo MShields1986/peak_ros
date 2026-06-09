@@ -1,7 +1,10 @@
-reconstruction:
-  process_rate:          20 # Hz - Consider interplay between this and acquisition rates
-  use_tf:              false
-  recon_frame_id:     "plot"
-  live_publish:        true
-  recon_const_vel:        0.05 # m/s - If use_tf == false
-  flip_direction:      true    #       If use_tf == false
+/peak/reconstruction_node:
+  ros__parameters:
+    settings:
+      reconstruction:
+        process_rate:          20   # Hz - Consider interplay between this and acquisition rates
+        use_tf:              false
+        recon_frame_id:     "plot"
+        live_publish:        true
+        recon_const_vel:        0.05 # m/s - If use_tf == false
+        flip_direction:      true     #       If use_tf == false
