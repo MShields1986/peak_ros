@@ -10,8 +10,7 @@ namespace peak_namespace {
 
 PeakComponent::PeakComponent(const rclcpp::NodeOptions& options)
   : rclcpp::Node("peak_node", options),
-    peak_handler_(),
-    stream_(false)
+    peak_handler_()
 {
     node_name_ = get_name();
     RCLCPP_INFO_STREAM(get_logger(), node_name_ << ": Initialising node...");
@@ -32,11 +31,6 @@ PeakComponent::PeakComponent(const rclcpp::NodeOptions& options)
         peak_port_,
         package_path_ + "/mps/" + mps_file_
     );
-
-    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    // TODO: Move to using smart pointers, mutex, futures or semiphors
-    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    ltpa_data_ptr_ = peak_handler_.ltpa_data_ptr();
 
     digitisation_rate_ = declare_parameter<int>("settings.digitisation_rate", 100);
     profile_           = declare_parameter<bool>("settings.profile", false);
@@ -59,14 +53,17 @@ PeakComponent::PeakComponent(const rclcpp::NodeOptions& options)
     initHardware();
 
     prePopulateAScanMessage();
+    precomputeBScanLookups();
     prePopulateBScanMessage();
     prePopulateGatedBScanMessage();
 
-    rclcpp::QoS latched_qos = rclcpp::QoS(100).transient_local();
+    // Streaming sensor data: small, non-latched queue. Latched (transient_local)
+    // QoS is avoided here as it is incompatible with intra-process comms.
+    rclcpp::QoS qos = rclcpp::QoS(rclcpp::KeepLast(3));
 
-    ascan_publisher_       = create_publisher<peak_ros::msg::Observation>("a_scans", latched_qos);
-    bscan_publisher_       = create_publisher<sensor_msgs::msg::PointCloud2>("b_scan", latched_qos);
-    gated_bscan_publisher_ = create_publisher<sensor_msgs::msg::PointCloud2>("gated_b_scan", latched_qos);
+    ascan_publisher_       = create_publisher<peak_ros::msg::Observation>("a_scans", qos);
+    bscan_publisher_       = create_publisher<sensor_msgs::msg::PointCloud2>("b_scan", qos);
+    gated_bscan_publisher_ = create_publisher<sensor_msgs::msg::PointCloud2>("gated_b_scan", qos);
 
     single_measure_service_ = create_service<std_srvs::srv::Trigger>(
         "take_single_measurement",
@@ -83,11 +80,22 @@ PeakComponent::PeakComponent(const rclcpp::NodeOptions& options)
 }
 
 
+PeakComponent::~PeakComponent() {
+    // Stop the asynchronous acquisition (cancels the in-flight async read,
+    // joins the IO thread and drains the socket) so shutdown never blocks
+    // waiting on the LTPA mid-packet.
+    peak_handler_.stopAsyncAcquisition();
+}
+
+
 void PeakComponent::initHardware() {
     RCLCPP_INFO_STREAM(get_logger(), node_name_ << ": Initialising Peak hardware...");
 
     peak_handler_.connect();
-    peak_handler_.sendReset(digitisation_rate_);
+
+    int reset_sleep = declare_parameter<int>("settings.reset_sleep_seconds", 10);
+    peak_handler_.sendReset(digitisation_rate_, reset_sleep);
+
     peak_handler_.readMpsFile();
     peak_handler_.sendMpsConfiguration();
 
@@ -106,7 +114,8 @@ void PeakComponent::prePopulateAScanMessage() {
     ltpa_msg_.num_ascans = peak_handler_.num_a_scans_;
     ltpa_msg_.ascans.reserve(ltpa_msg_.num_ascans);
 
-    ltpa_msg_.digitisation_rate = ltpa_data_ptr_->digitisation_rate;
+    // digitisation_rate is set during sendReset; read it from the handler's data pointer
+    ltpa_msg_.digitisation_rate = peak_handler_.ltpa_data_ptr()->digitisation_rate;
 
     // TODO: Consider sending this as a separate one time latched message rather than repeated here
     ltpa_msg_.n_elements           = declare_parameter<int>("settings.boundary_conditions.n_elements", 0);
@@ -135,6 +144,40 @@ void PeakComponent::prePopulateAScanMessage() {
         ltpa_msg_.couplant_depth,
         ltpa_msg_.specimen_depth
         );
+}
+
+
+void PeakComponent::precomputeBScanLookups() {
+    int ascan_len = ltpa_msg_.ascan_length;
+    int num_elements = ltpa_msg_.num_ascans;
+    float dt = 1.0f / ((float)ltpa_msg_.digitisation_rate * 1000000.0f);
+    float vel_material = (float)ltpa_msg_.vel_material;
+    float element_pitch = (float)ltpa_msg_.element_pitch * 0.001f; // mm to m
+
+    // Z lookup: depth for each sample index
+    z_lookup_.resize(ascan_len);
+    for (int i = 0; i < ascan_len; ++i) {
+        z_lookup_[i] = (float)i * vel_material * dt / 2.0f;
+    }
+
+    // Y lookup: y position for each element
+    y_lookup_.resize(num_elements);
+    for (int e = 0; e < num_elements; ++e) {
+        y_lookup_[e] = (float)e * element_pitch;
+    }
+
+    // TCG gain lookup: precompute pow() for each sample
+    tcg_gain_.resize(ascan_len);
+    for (int i = 0; i < ascan_len; ++i) {
+        float z = z_lookup_[i];
+        if (use_tcg_ && z > (10.0f * 0.001f)) {
+            tcg_gain_[i] = std::pow(10.0f, (amp_factor_ * (z / depth_factor_) / 20.0f));
+        } else {
+            tcg_gain_[i] = 1.0f;
+        }
+    }
+
+    lookups_valid_ = true;
 }
 
 
@@ -180,9 +223,12 @@ void PeakComponent::streamDataSrvCb(const std::shared_ptr<peak_ros::srv::StreamD
     RCLCPP_INFO_STREAM(get_logger(), node_name_ << ": Streaming request received: " << request->stream_data);
     if (request->stream_data) {
         stream_ = true;
+        // Cancellable, non-blocking acquisition driven by the handler's IO thread.
+        peak_handler_.startAsyncAcquisition(nullptr, acquisition_rate_);
         response->success = true;
     } else {
         stream_ = false;
+        peak_handler_.stopAsyncAcquisition();
         response->success = true;
     }
 }
@@ -192,6 +238,15 @@ void PeakComponent::takeMeasurementSrvCb(const std::shared_ptr<std_srvs::srv::Tr
                                          std::shared_ptr<std_srvs::srv::Trigger::Response> response) {
     (void)request;
     RCLCPP_INFO_STREAM(get_logger(), node_name_ << ": Take single measurement request received");
+
+    // A single (synchronous) measurement and asynchronous streaming both drive
+    // the same socket, so they are mutually exclusive.
+    if (stream_) {
+        response->success = false;
+        response->message = "Streaming is active; call stream_data false before a single measurement";
+        return;
+    }
+
     takeMeasurement();
     response->success = true;
     response->message = "Single measurement taken";
@@ -199,67 +254,19 @@ void PeakComponent::takeMeasurementSrvCb(const std::shared_ptr<std_srvs::srv::Tr
 
 
 void PeakComponent::takeMeasurement() {
+    std::lock_guard<std::mutex> lock(processing_mutex_);
+
     // TODO: Remove profiling when happy with acquisition rates
     std::chrono::high_resolution_clock::time_point begin;
     std::chrono::high_resolution_clock::time_point end;
-    std::chrono::high_resolution_clock::time_point end_1;
-    std::chrono::high_resolution_clock::time_point end_2;
-    std::chrono::high_resolution_clock::time_point end_3;
-    std::chrono::high_resolution_clock::time_point end_4;
-    std::chrono::high_resolution_clock::time_point end_5;
-
     if (profile_) begin = std::chrono::high_resolution_clock::now();
 
-    // ~40ms
     if (peak_handler_.sendDataRequest()) {
-
-        if (profile_) {
-            end_1 = std::chrono::high_resolution_clock::now();
-            std::cout << "\033[32m";
-            std::cout << "Profiling [peak_handler_.sendDataRequest()] --- " << std::chrono::duration_cast<std::chrono::microseconds>(end_1-begin).count() << " us" << std::endl;
-            std::cout << "\033[0m";
+        const auto* data_ptr = peak_handler_.ltpa_data_ptr();
+        if (data_ptr) {
+            latest_data_ = *data_ptr;
         }
-
-        // ~0.3ms
-        populateAScanMessage();
-
-        if (profile_) {
-            end_2 = std::chrono::high_resolution_clock::now();
-            std::cout << "\033[32m";
-            std::cout << "Profiling [PeakComponent::populateAScanMessage()] --- " << std::chrono::duration_cast<std::chrono::microseconds>(end_2-end_1).count() << " us" << std::endl;
-            std::cout << "\033[0m";
-        }
-
-        // ~0.4ms
-        ascan_publisher_->publish(ltpa_msg_);
-
-        if (profile_) {
-            end_3 = std::chrono::high_resolution_clock::now();
-            std::cout << "\033[32m";
-            std::cout << "Profiling [ascan_publisher_->publish(ltpa_msg_)] --- " << std::chrono::duration_cast<std::chrono::microseconds>(end_3-end_2).count() << " us" << std::endl;
-            std::cout << "\033[0m";
-        }
-
-        // ~12ms
-        populateBScanMessage(ltpa_msg_);
-
-        if (profile_) {
-            end_4 = std::chrono::high_resolution_clock::now();
-            std::cout << "\033[32m";
-            std::cout << "Profiling [PeakComponent::populateBScanMessage(ltpa_msg_)] --- " << std::chrono::duration_cast<std::chrono::microseconds>(end_4-end_3).count() << " us" << std::endl;
-            std::cout << "\033[0m";
-        }
-
-        bscan_publisher_->publish(bscan_cloud_);
-
-        if (profile_) {
-            end_5 = std::chrono::high_resolution_clock::now();
-            std::cout << "\033[32m";
-            std::cout << "Profiling [bscan_publisher_->publish(bscan_cloud_);] --- " << std::chrono::duration_cast<std::chrono::microseconds>(end_5-end_4).count() << " us" << std::endl;
-            std::cout << "\033[0m";
-        }
-
-        gated_bscan_publisher_->publish(gated_bscan_cloud_);
+        processMeasurement();
     }
 
     if (profile_) {
@@ -271,21 +278,69 @@ void PeakComponent::takeMeasurement() {
 }
 
 
+void PeakComponent::processMeasurement() {
+    std::chrono::high_resolution_clock::time_point begin;
+    std::chrono::high_resolution_clock::time_point end_1;
+    std::chrono::high_resolution_clock::time_point end_2;
+    std::chrono::high_resolution_clock::time_point end_3;
+    std::chrono::high_resolution_clock::time_point end_4;
+
+    if (profile_) begin = std::chrono::high_resolution_clock::now();
+
+    populateAScanMessage();
+
+    if (profile_) {
+        end_1 = std::chrono::high_resolution_clock::now();
+        std::cout << "\033[32m";
+        std::cout << "Profiling [PeakComponent::populateAScanMessage()] --- " << std::chrono::duration_cast<std::chrono::microseconds>(end_1-begin).count() << " us" << std::endl;
+        std::cout << "\033[0m";
+    }
+
+    ascan_publisher_->publish(ltpa_msg_);
+
+    if (profile_) {
+        end_2 = std::chrono::high_resolution_clock::now();
+        std::cout << "\033[32m";
+        std::cout << "Profiling [ascan_publisher_->publish(ltpa_msg_)] --- " << std::chrono::duration_cast<std::chrono::microseconds>(end_2-end_1).count() << " us" << std::endl;
+        std::cout << "\033[0m";
+    }
+
+    populateBScanMessage(ltpa_msg_);
+
+    if (profile_) {
+        end_3 = std::chrono::high_resolution_clock::now();
+        std::cout << "\033[32m";
+        std::cout << "Profiling [PeakComponent::populateBScanMessage(ltpa_msg_)] --- " << std::chrono::duration_cast<std::chrono::microseconds>(end_3-end_2).count() << " us" << std::endl;
+        std::cout << "\033[0m";
+    }
+
+    bscan_publisher_->publish(bscan_cloud_);
+    gated_bscan_publisher_->publish(gated_bscan_cloud_);
+
+    if (profile_) {
+        end_4 = std::chrono::high_resolution_clock::now();
+        std::cout << "\033[32m";
+        std::cout << "Profiling [publish bscan + gated] --- " << std::chrono::duration_cast<std::chrono::microseconds>(end_4-end_3).count() << " us" << std::endl;
+        std::cout << "\033[0m";
+    }
+}
+
+
 void PeakComponent::populateAScanMessage() {
     ltpa_msg_.header.stamp = this->now();
     ltpa_msg_.ascans.clear();
 
-    for (auto ascan : ltpa_data_ptr_->ascans) {
+    for (auto& ascan : latest_data_.ascans) {
         peak_ros::msg::Ascan ascan_msg;
         ascan_msg.count = ascan.header.count;
         ascan_msg.test_number = ascan.header.testNo;
         ascan_msg.dof = ascan.header.dof;
         ascan_msg.channel = ascan.header.channel;
-        ascan_msg.amplitudes = ascan.amps;
-        ltpa_msg_.ascans.push_back(ascan_msg);
+        ascan_msg.amplitudes = std::move(ascan.amps);
+        ltpa_msg_.ascans.push_back(std::move(ascan_msg));
     }
 
-    ltpa_msg_.max_amplitude = ltpa_data_ptr_->max_amplitude;
+    ltpa_msg_.max_amplitude = latest_data_.max_amplitude;
 }
 
 
@@ -315,12 +370,10 @@ void PeakComponent::populateBScanMessage(const peak_ros::msg::Observation& obs_m
     sensor_msgs::PointCloud2Iterator<float> gated_bscan_iterAmps(gated_bscan_cloud_, "Amplitudes");
     sensor_msgs::PointCloud2Iterator<float> gated_bscan_iterTof(gated_bscan_cloud_, "TimeofFlight");
 
-    float dt =                  1.0f / ((float)obs_msg.digitisation_rate * 1000000.0f);        // sec
-    // double time_in_wedge =       2.0 * obs_msg.wedge_depth / obs_msg.vel_wedge / 1000.0;       // sec
-    // double time_in_couplant =    2.0 * obs_msg.couplant_depth / obs_msg.vel_couplant / 1000.0; // sec
-    // double time_in_specimen =    2.0 * obs_msg.specimen_depth / obs_msg.vel_material / 1000.0; // sec
-
     float nan_value = std::numeric_limits<float>::quiet_NaN();
+    float max_amp_f = (float)obs_msg.max_amplitude;
+    float tcg_limit_pos = max_amp_f * tcg_limit_;
+    float tcg_limit_neg = -max_amp_f * tcg_limit_;
 
     float x;
     float y;
@@ -333,61 +386,28 @@ void PeakComponent::populateBScanMessage(const peak_ros::msg::Observation& obs_m
 
     for (const auto& ascan : obs_msg.ascans) {
         bool    found_front_wall = false;
-        float   amp_front_wall   = nan_value;
         float   depth_front_wall = nan_value;
         bool    found_back_wall  = false;
-        float   amp_back_wall    = nan_value;
-        float   depth_back_wall  = nan_value;
 
         int i = 0;
         for (auto amplitude : ascan.amplitudes) {
-            // GAT(S) --- GAT <Tn> <Gate Start> <Gate End>
-            // Defines search gate start and end positions for the specified test.
-            // By default, the gate units are in machine units.
-            // A machine unit is defined by the digitisation rate (i.e. 10nSec for 100MHz digitisation).
-            // Maybe assume 100 MHz to start with...
-            // double t = (double)i * dt;
-            // double z = 0.0;
-            // if (t < time_in_wedge) {
-            //     z = t * obs_msg.vel_wedge;
-            // } else if (t < time_in_couplant) {
-            //     z = (t - time_in_wedge) * obs_msg.vel_couplant
-            //          + obs_msg.wedge_depth;
-            // } else if (t < time_in_specimen) {
-            //     z = (t - time_in_wedge - time_in_couplant) * obs_msg.vel_couplant
-            //          + obs_msg.wedge_depth
-            //          + obs_msg.couplant_depth;
-            // }
-
             x = 0.0f;
-            y = (float)((float)element_i * (float)obs_msg.element_pitch * 0.001f); // mm to m
-            z = (float)((float)i * (float)obs_msg.vel_material * dt / 2.0f);
+            y = lookups_valid_ ? y_lookup_[element_i] : (float)element_i * (float)obs_msg.element_pitch * 0.001f;
+            z = lookups_valid_ ? z_lookup_[i] : (float)i * (float)obs_msg.vel_material * (1.0f / ((float)obs_msg.digitisation_rate * 1000000.0f)) / 2.0f;
 
-            if (use_tcg_ and z > (10.0f * 0.001f)) { // TODO: Param for skipping x mm in before applying tcg
-                float amplitude_tcg;
+            if (lookups_valid_ && tcg_gain_[i] != 1.0f) {
+                float amplitude_tcg = (float)amplitude * tcg_gain_[i];
 
-                // Amplify by n dB per l mm
-                // amplitude_tcg = amplitude * 10.0 ^ (n * (z / l) / 20.0);
-                amplitude_tcg = (float)amplitude * std::pow(10.0f, (amp_factor_ * (z / depth_factor_) / 20.0f));
-
-
-                if (amplitude_tcg > (float)obs_msg.max_amplitude * tcg_limit_) {
-                    amplitude_tcg = (float)obs_msg.max_amplitude * tcg_limit_;
-                } else if (amplitude_tcg < -(float)obs_msg.max_amplitude * tcg_limit_) {
-                    amplitude_tcg = -(float)obs_msg.max_amplitude * tcg_limit_;
+                if (amplitude_tcg > tcg_limit_pos) {
+                    amplitude_tcg = tcg_limit_pos;
+                } else if (amplitude_tcg < tcg_limit_neg) {
+                    amplitude_tcg = tcg_limit_neg;
                 }
 
                 amplitude = amplitude_tcg;
             }
 
-            // Raw Amplitude
-            // normalised_amplitude = (float)amplitude;
-
-            // Normalised on Linear Scale
-            normalised_amplitude = (float)amplitude / (float)obs_msg.max_amplitude;
-
-            // Normalised on dB Scale
-            // normalised_amplitude = 20.0 * (float)log10( (float)abs( (float)amplitude / (float)obs_msg.max_amplitude) );
+            normalised_amplitude = (float)amplitude / max_amp_f;
 
             *bscan_iterX = x;
             *bscan_iterY = y;
@@ -406,8 +426,7 @@ void PeakComponent::populateBScanMessage(const peak_ros::msg::Observation& obs_m
                 if (zero_to_front_wall_) {
                     z = 0.0f;
                 }
-                amp_front_wall = normalised_amplitude;
-                gated_amplitude = amp_front_wall;
+                gated_amplitude = normalised_amplitude;
 
                 found_front_wall = true;
                 if (!show_front_wall_) {
@@ -424,13 +443,11 @@ void PeakComponent::populateBScanMessage(const peak_ros::msg::Observation& obs_m
                        z < max_depth_ and
                        z > (depth_to_skip_ + depth_front_wall) and
                        normalised_amplitude > gate_back_wall_) {
-                depth_back_wall = z;
                 if (zero_to_front_wall_) {
                     z = z - depth_front_wall;
                 }
-                amp_back_wall = normalised_amplitude;
-                gated_amplitude = amp_back_wall;
-                tof = depth_back_wall;
+                gated_amplitude = normalised_amplitude;
+                tof = z;
 
                 found_back_wall = true;
             } else {
@@ -464,7 +481,11 @@ void PeakComponent::timerCb() {
     RCLCPP_INFO_STREAM_THROTTLE(get_logger(), *get_clock(), 600000, node_name_ << ": Node running");
     if (stream_) {
         RCLCPP_INFO_STREAM_THROTTLE(get_logger(), *get_clock(), 60000, node_name_ << ": Streaming data...");
-        takeMeasurement();
+        std::lock_guard<std::mutex> lock(processing_mutex_);
+        // Consume the latest frame produced by the asynchronous acquisition.
+        if (peak_handler_.getLatestData(latest_data_)) {
+            processMeasurement();
+        }
     } else {
         RCLCPP_INFO_STREAM_THROTTLE(get_logger(), *get_clock(), 60000, node_name_ << ": Not streaming data...");
     }

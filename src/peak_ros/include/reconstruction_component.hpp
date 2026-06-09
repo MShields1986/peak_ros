@@ -45,8 +45,9 @@ private:
 
     rclcpp::TimerBase::SharedPtr            timer_;
 
-    sensor_msgs::msg::PointCloud2                point_cloud_;
-    std::deque<sensor_msgs::msg::PointCloud2>    buffer_;
+    sensor_msgs::msg::PointCloud2                            point_cloud_;
+    sensor_msgs::msg::PointCloud2                            output_pointcloud2_;
+    std::deque<sensor_msgs::msg::PointCloud2::ConstSharedPtr> buffer_;
 
     bool                                    use_tf_;
     uint32_t                                b_scan_count_;

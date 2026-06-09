@@ -20,7 +20,7 @@ include(FetchContent)
 FetchContent_Declare(
   peak_micropulse
   GIT_REPOSITORY https://github.com/MShields1986/peak_micropulse_driver
-  GIT_TAG        feature/nodelet_compatibility
+  GIT_TAG        main
 )
 FetchContent_MakeAvailable(peak_micropulse)
 

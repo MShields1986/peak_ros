@@ -1,10 +1,13 @@
 #pragma once
 
+#include <atomic>
 #include <chrono>
 #include <cmath>
 #include <limits>
 #include <memory>
+#include <mutex>
 #include <string>
+#include <vector>
 
 #include <rclcpp/rclcpp.hpp>
 
@@ -13,12 +16,12 @@
 #include <sensor_msgs/msg/point_field.hpp>
 #include <sensor_msgs/point_cloud2_iterator.hpp>
 
+#include <std_srvs/srv/trigger.hpp>
+
 #include "PeakMicroPulseHandler/peak_handler.h"
 
 #include "peak_ros/msg/ascan.hpp"
 #include "peak_ros/msg/observation.hpp"
-
-#include <std_srvs/srv/trigger.hpp>
 
 #include "peak_ros/srv/stream_data.hpp"
 
@@ -28,10 +31,12 @@ namespace peak_namespace {
 class PeakComponent : public rclcpp::Node {
 public:
     explicit                           PeakComponent(const rclcpp::NodeOptions& options);
+    ~PeakComponent() override;
 
 private:
     void                               initHardware();
     void                               prePopulateAScanMessage();
+    void                               precomputeBScanLookups();
     void                               prePopulateBScanMessage();
     void                               prePopulateGatedBScanMessage();
     void                               streamDataSrvCb(const std::shared_ptr<peak_ros::srv::StreamData::Request> request,
@@ -39,6 +44,7 @@ private:
     void                               takeMeasurementSrvCb(const std::shared_ptr<std_srvs::srv::Trigger::Request> request,
                                                             std::shared_ptr<std_srvs::srv::Trigger::Response> response);
     void                               takeMeasurement();
+    void                               processMeasurement();
     void                               populateAScanMessage();
     void                               populateBScanMessage(const peak_ros::msg::Observation& obs_msg);
     void                               timerCb();
@@ -68,16 +74,23 @@ private:
     bool                               zero_to_front_wall_;
     bool                               show_front_wall_;
 
+    // Precomputed B-scan lookup tables (built once after config is set)
+    std::vector<float>                 z_lookup_;      // z_lookup_[i] = depth for sample i
+    std::vector<float>                 y_lookup_;      // y_lookup_[e] = y position for element e
+    std::vector<float>                 tcg_gain_;      // tcg_gain_[i] = TCG multiplier for sample i
+    bool                               lookups_valid_{false};
+
     // Input
     PeakHandler                        peak_handler_;
-    const PeakHandler::OutputFormat*   ltpa_data_ptr_;
+    PeakHandler::OutputFormat          latest_data_;
 
     // Output
     peak_ros::msg::Observation         ltpa_msg_;
     sensor_msgs::msg::PointCloud2      bscan_cloud_;
     sensor_msgs::msg::PointCloud2      gated_bscan_cloud_;
 
-    bool                               stream_;
+    std::atomic<bool>                  stream_{false};
+    std::mutex                         processing_mutex_;
 
     rclcpp::Publisher<peak_ros::msg::Observation>::SharedPtr      ascan_publisher_;
     rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr   bscan_publisher_;

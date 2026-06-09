@@ -17,7 +17,7 @@ ReconstructionComponent::ReconstructionComponent(const rclcpp::NodeOptions& opti
     tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
 
     subscriber_ = create_subscription<sensor_msgs::msg::PointCloud2>(
-        "input", rclcpp::QoS(100),
+        "input", rclcpp::QoS(10),
         std::bind(&ReconstructionComponent::callback, this, std::placeholders::_1));
     publisher_ = create_publisher<sensor_msgs::msg::PointCloud2>(
         "output", rclcpp::QoS(10).transient_local());
@@ -70,7 +70,7 @@ void ReconstructionComponent::initialisePointcloud() {
 
 
 void ReconstructionComponent::callback(const sensor_msgs::msg::PointCloud2::ConstSharedPtr msg) {
-    buffer_.push_back(*msg);
+    buffer_.push_back(msg);
 }
 
 
@@ -93,8 +93,7 @@ void ReconstructionComponent::timerCb() {
     RCLCPP_INFO_STREAM_THROTTLE(get_logger(), *get_clock(), 600000, node_name_ << ": Node running");
 
     if (!buffer_.empty()) {
-        sensor_msgs::msg::PointCloud2* msg = &buffer_.front();
-        sensor_msgs::msg::PointCloud2 output_pointcloud2;
+        const sensor_msgs::msg::PointCloud2::ConstSharedPtr& msg = buffer_.front();
 
         ////////////////////////////////////////////////////////////////////////////////////////////
         // Live full 3D reconstruction
@@ -110,16 +109,12 @@ void ReconstructionComponent::timerCb() {
                                                      rclcpp::Duration::from_seconds(3.0)     // time out
                                                      );
 
-                tf2::doTransform<sensor_msgs::msg::PointCloud2>(*msg, output_pointcloud2, trans_);
+                tf2::doTransform<sensor_msgs::msg::PointCloud2>(*msg, output_pointcloud2_, trans_);
 
-                point_cloud_.width += output_pointcloud2.width;
-                uint64_t prev_size = point_cloud_.data.size();
-                point_cloud_.data.resize(point_cloud_.data.size() + output_pointcloud2.data.size());
-
-                std::copy(
-                    output_pointcloud2.data.begin(),
-                    output_pointcloud2.data.end(),
-                    point_cloud_.data.begin() + prev_size);
+                point_cloud_.width += output_pointcloud2_.width;
+                point_cloud_.data.insert(point_cloud_.data.end(),
+                    output_pointcloud2_.data.begin(),
+                    output_pointcloud2_.data.end());
 
                 point_cloud_.header.stamp = msg->header.stamp;
 
@@ -193,20 +188,16 @@ void ReconstructionComponent::timerCb() {
                 }
             }
 
-            tf2::doTransform<sensor_msgs::msg::PointCloud2>(*msg, output_pointcloud2, trans_);
+            tf2::doTransform<sensor_msgs::msg::PointCloud2>(*msg, output_pointcloud2_, trans_);
 
             // RCLCPP_INFO_STREAM_THROTTLE(get_logger(), *get_clock(), 10000, node_name_ << ": transform translation x: " << trans_.transform.translation.x);
             // RCLCPP_INFO_STREAM_THROTTLE(get_logger(), *get_clock(), 10000, node_name_ << ": transform translation y: " << trans_.transform.translation.y);
             // RCLCPP_INFO_STREAM_THROTTLE(get_logger(), *get_clock(), 10000, node_name_ << ": transform translation z: " << trans_.transform.translation.z);
 
-            point_cloud_.width += output_pointcloud2.width;
-            uint64_t prev_size = point_cloud_.data.size();
-            point_cloud_.data.resize(point_cloud_.data.size() + output_pointcloud2.data.size());
-
-            std::copy(
-                output_pointcloud2.data.begin(),
-                output_pointcloud2.data.end(),
-                point_cloud_.data.begin() + prev_size);
+            point_cloud_.width += output_pointcloud2_.width;
+            point_cloud_.data.insert(point_cloud_.data.end(),
+                output_pointcloud2_.data.begin(),
+                output_pointcloud2_.data.end());
 
             point_cloud_.header.stamp = msg->header.stamp;
 
