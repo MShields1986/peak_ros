@@ -122,6 +122,26 @@ install(DIRECTORY
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
   ament_lint_auto_find_test_dependencies()
+
+  # Integration test against MockPeakHardware, built from the fetched peak_micropulse_driver source
+  find_package(ament_cmake_gtest REQUIRED)
+  add_subdirectory(
+    ${peak_micropulse_SOURCE_DIR}/mock_hardware
+    ${peak_micropulse_BINARY_DIR}/mock_hardware
+  )
+
+  ament_add_gtest(${PROJECT_NAME}_integration_test
+    test/test_peak_component_integration.cpp
+    TIMEOUT 120
+  )
+  target_link_libraries(${PROJECT_NAME}_integration_test
+    ${PROJECT_NAME}_components
+    MockPeakHardware
+    ${rclcpp_TARGETS}
+    ${sensor_msgs_TARGETS}
+    ${std_srvs_TARGETS}
+    ${cpp_typesupport_target}
+  )
 endif()
 
 ament_export_dependencies(rosidl_default_runtime)
