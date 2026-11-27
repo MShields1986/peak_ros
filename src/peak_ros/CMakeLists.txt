@@ -90,6 +90,10 @@ target_link_libraries(${PROJECT_NAME}_components
   ${cpp_typesupport_target}
 )
 
+# Humble's tf2_sensor_msgs is header only and exports no target, so its include directories come from
+# ament_target_dependencies, which Humble still has
+ament_target_dependencies(${PROJECT_NAME}_components tf2_sensor_msgs)
+
 # Register the composable components
 rclcpp_components_register_nodes(${PROJECT_NAME}_components
   "peak_namespace::PeakComponent"
