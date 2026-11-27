@@ -1,7 +1,7 @@
-[![docker_ci](https://github.com/MShields1986/peak_ros/actions/workflows/industrial_ci_action.yml/badge.svg)](https://github.com/MShields1986/peak_ros/actions/workflows/industrial_ci_action.yml)
+[![docker_ci](https://github.com/MShields1986/peak_ros/actions/workflows/industrial_ci_action.yml/badge.svg?branch=noetic)](https://github.com/MShields1986/peak_ros/actions/workflows/industrial_ci_action.yml?query=branch%3Anoetic)
 
 # peak_ros
-ROS driver for use with Peak MicroPulse devices.
+ROS 1 driver for use with Peak MicroPulse devices, targeting ROS 1 Noetic on Ubuntu 20.04. The ROS 2 Lyrical Luth driver is on `main`, and the ROS 2 Jazzy Jalisco and Humble Hawksbill drivers are on the `jazzy` and `humble` branches.
 
 ## Citation
 If you use this repository for your research, please cite the following conference where it was first shared.
@@ -19,7 +19,7 @@ If you use this repository for your research, please cite the following conferen
 
 ## Quick Start with Docker Compose
 ```bash
-git clone https://github.com/MShields1986/peak_ros.git
+git clone -b noetic https://github.com/MShields1986/peak_ros.git
 cd peak_ros
 ./run.sh
 ```
@@ -31,7 +31,7 @@ This package depends on tf2-sensor-msgs.
 sudo apt update
 sudo apt install ros-noetic-tf2-sensor-msgs
 cd catkin_ws/src
-git clone https://github.com/MShields1986/peak_ros.git
+git clone -b noetic https://github.com/MShields1986/peak_ros.git
 cd ..
 catkin build
 ```
