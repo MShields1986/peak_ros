@@ -89,4 +89,6 @@
   <exec_depend>tf2_sensor_msgs</exec_depend>
   <exec_depend>visualization_msgs</exec_depend>
 
+  <test_depend>rostest</test_depend>
+
 </package>

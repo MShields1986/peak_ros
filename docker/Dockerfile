@@ -1,9 +1,9 @@
 ##############
 # Base image #
 ##############
-FROM osrf/ros:noetic-desktop-full as base
-# FROM ros:noetic-ros-base as base
-# FROM ros:noetic-robot as base
+FROM osrf/ros:noetic-desktop-full AS base
+# FROM ros:noetic-ros-base AS base
+# FROM ros:noetic-robot AS base
 
 ARG CATKIN_WORKSPACE_DIR=${CATKIN_WORKSPACE_DIR}
 
@@ -33,4 +33,17 @@ RUN sed -i '/exec "$@"/d' /ros_entrypoint.sh \
  && echo 'exec "$@"' >> /ros_entrypoint.sh
 
 ENTRYPOINT [ "/ros_entrypoint.sh" ]
+
+
+##############
+# Test image #
+##############
+FROM base AS test
+
+ARG CATKIN_WORKSPACE_DIR=${CATKIN_WORKSPACE_DIR}
+
+# Build test binaries only (tests are run at container start via docker-compose command)
+RUN source /opt/ros/noetic/setup.bash \
+ && source ${CATKIN_WORKSPACE_DIR}/devel/setup.bash \
+ && catkin build peak_ros --catkin-make-args tests
 

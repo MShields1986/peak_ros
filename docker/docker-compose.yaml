@@ -21,15 +21,32 @@ services:
     privileged: true
     environment:
       - DISPLAY
+      - 'DISABLE_ROS1_EOL_WARNINGS=${DISABLE_ROS1_EOL_WARNINGS}'
       - 'CATKIN_WORKSPACE_DIR=${CATKIN_WORKSPACE_DIR}'
       - 'ROS_MASTER_URI=${ROS_MASTER_URI}'
       - 'ROS_HOSTNAME=${ROS_HOSTNAME}'
-      #- 'ROS_IP=${ROS_IP}
+      #- 'ROS_IP=${ROS_IP}'
     #extra_hosts:
       #- "ETC_HOSTNAME_1:ETC_HOST_IP_1"
     volumes:
-      - $XAUTHORITY:/root/.Xauthority
+      - ${XAUTHORITY:-/dev/null}:/root/.Xauthority:ro
       - ../src:${CATKIN_WORKSPACE_DIR}/src
     #command: sleep infinity
     command: roslaunch peak_ros init.launch
     #restart: unless-stopped
+
+  test:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+      target: test
+      args:
+        - CATKIN_WORKSPACE_DIR=${CATKIN_WORKSPACE_DIR}
+    network_mode: host
+    ipc: host
+    environment:
+      - 'DISABLE_ROS1_EOL_WARNINGS=${DISABLE_ROS1_EOL_WARNINGS}'
+      - 'CATKIN_WORKSPACE_DIR=${CATKIN_WORKSPACE_DIR}'
+    command: bash -c "roscore & while ! rostopic list >/dev/null 2>&1; do sleep 0.1; done && ${CATKIN_WORKSPACE_DIR}/devel/lib/peak_ros/peak_ros-integration-test"
+    profiles:
+      - test
