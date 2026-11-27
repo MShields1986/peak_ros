@@ -1,7 +1,7 @@
-[![industrial_ci](https://github.com/MShields1986/peak_ros/actions/workflows/industrial_ci_action.yml/badge.svg)](https://github.com/MShields1986/peak_ros/actions/workflows/industrial_ci_action.yml)
+[![docker_ci](https://github.com/MShields1986/peak_ros/actions/workflows/industrial_ci_action.yml/badge.svg)](https://github.com/MShields1986/peak_ros/actions/workflows/industrial_ci_action.yml)
 
 # peak_ros
-ROS 2 (Rolling) driver for use with Peak MicroPulse devices.
+ROS 2 driver for use with Peak MicroPulse devices, targeting ROS 2 Lyrical Luth on Ubuntu 26.04. The ROS 2 Jazzy Jalisco and Humble Hawksbill drivers are on the `jazzy` and `humble` branches, and the ROS 1 Noetic driver is on the `noetic` branch.
 
 ## Citation
 If you use this repository for your research, please cite the following conference where it was first shared.
@@ -29,7 +29,7 @@ This package depends on `pcl_ros` and `tf2_sensor_msgs`.
 
 ```bash
 sudo apt update
-sudo apt install ros-rolling-pcl-ros ros-rolling-tf2-sensor-msgs
+sudo apt install ros-lyrical-pcl-ros ros-lyrical-tf2-sensor-msgs
 cd ros2_ws/src
 git clone https://github.com/MShields1986/peak_ros.git
 cd ..

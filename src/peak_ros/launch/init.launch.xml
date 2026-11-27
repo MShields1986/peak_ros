@@ -56,7 +56,7 @@
 
 
     <!-- Logging -->
-    <executable cmd="ros2 bag record -o $(find-pkg-share peak_ros)/bags/$(var rosbag_name) /tf /peak/a_scans /peak/b_scan /peak/gated_b_scan /peak/detections /iiwa/state/CartesianWrench"
+    <executable cmd="ros2 bag record -o $(find-pkg-share peak_ros)/bags/$(var rosbag_name) --topics /tf /peak/a_scans /peak/b_scan /peak/gated_b_scan /peak/detections /iiwa/state/CartesianWrench"
                 if="$(var logging)" output="screen" />
 
 

@@ -2,7 +2,7 @@
 
 #include <filesystem>
 
-#include <ament_index_cpp/get_package_share_directory.hpp>
+#include <ament_index_cpp/get_package_share_path.hpp>
 #include <rclcpp_components/register_node_macro.hpp>
 
 
@@ -15,9 +15,7 @@ PeakComponent::PeakComponent(const rclcpp::NodeOptions& options)
     node_name_ = get_name();
     RCLCPP_INFO_STREAM(get_logger(), node_name_ << ": Initialising node...");
 
-    std::filesystem::path pkg_share;
-    ament_index_cpp::get_package_share_directory("peak_ros", pkg_share);
-    package_path_ = pkg_share.string();
+    package_path_ = ament_index_cpp::get_package_share_path("peak_ros").string();
 
     // Connection / acquisition configuration
     acquisition_rate_ = declare_parameter<int>("settings.acquisition_rate", 20);
