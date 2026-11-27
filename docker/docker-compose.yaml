@@ -25,8 +25,22 @@ services:
       - 'ROS_DOMAIN_ID=${ROS_DOMAIN_ID}'
       - 'RMW_IMPLEMENTATION=${RMW_IMPLEMENTATION}'
     volumes:
-      - $XAUTHORITY:/root/.Xauthority
+      - ${XAUTHORITY:-/dev/null}:/root/.Xauthority:ro
       - ../src:${ROS2_WORKSPACE_DIR}/src
     #command: sleep infinity
     command: ros2 launch peak_ros init.launch.xml
     #restart: unless-stopped
+
+  test:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+      target: test
+      args:
+        - ROS2_WORKSPACE_DIR=${ROS2_WORKSPACE_DIR}
+    # On its own network, so it cannot meet a driver or robot on the host
+    environment:
+      - 'RMW_IMPLEMENTATION=${RMW_IMPLEMENTATION}'
+    command: ${ROS2_WORKSPACE_DIR}/build/peak_ros/peak_ros_integration_test
+    profiles:
+      - test

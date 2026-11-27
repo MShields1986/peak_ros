@@ -85,6 +85,9 @@ Please ensure that your MPS file contains only one of each of these directives a
 ### Streaming Rates
 Streaming rates can be set in the [config file](src/peak_ros/config/default.yaml). However, please be aware that your mps file will dictate the upper bound for your streaming rate as the number of focal laws and listening time for each focal law, GATS command, dictates the acquisition time needed by the Peak hardware.
 
+## Tests
+`./test.sh` builds the Docker image and runs the integration test in it, as GitHub Actions does on every push. The test runs the driver against `MockPeakHardware` from [peak_micropulse_driver](https://github.com/MShields1986/peak_micropulse_driver), which simulates a Peak MicroPulse over TCP, and checks single measurements, streaming, and the A-scan and B-scan messages.
+
 ## Bugs and Feature Requests
 Please report bugs and request features using the [Issue Tracker](https://github.com/MShields1986/peak_ros/issues).
 

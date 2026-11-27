@@ -3,10 +3,12 @@
 #include <atomic>
 #include <chrono>
 #include <cmath>
+#include <condition_variable>
 #include <limits>
 #include <memory>
 #include <mutex>
 #include <string>
+#include <thread>
 #include <vector>
 
 #include <rclcpp/rclcpp.hpp>
@@ -48,6 +50,11 @@ private:
     void                               populateAScanMessage();
     void                               populateBScanMessage(const peak_ros::msg::Observation& obs_msg);
     void                               timerCb();
+
+    // Called from the handler's IO thread when new data arrives, to wake the processing thread
+    void                               onDataReady(bool valid);
+    // Processes each measurement as soon as it arrives, rather than at the next timer tick
+    void                               processingLoop();
 
     std::string                        node_name_;
     int                                digitisation_rate_;
@@ -100,6 +107,12 @@ private:
     rclcpp::Service<peak_ros::srv::StreamData>::SharedPtr stream_service_;
 
     rclcpp::TimerBase::SharedPtr       timer_;
+
+    std::thread                        processing_thread_;
+    std::mutex                         data_ready_mutex_;
+    std::condition_variable            data_ready_cv_;
+    bool                               data_ready_{false};
+    bool                               stopping_{false};
 };
 
 } // namespace peak_namespace
