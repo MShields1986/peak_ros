@@ -74,6 +74,8 @@ PeakComponent::PeakComponent(const rclcpp::NodeOptions& options)
         std::chrono::duration<double>(1.0 / static_cast<double>(acquisition_rate_)),
         std::bind(&PeakComponent::timerCb, this));
 
+    processing_thread_ = std::thread(&PeakComponent::processingLoop, this);
+
     RCLCPP_INFO_STREAM(get_logger(), node_name_ << ": Node initialised");
 }
 
@@ -83,6 +85,16 @@ PeakComponent::~PeakComponent() {
     // joins the IO thread and drains the socket) so shutdown never blocks
     // waiting on the LTPA mid-packet.
     peak_handler_.stopAsyncAcquisition();
+
+    // No more data can arrive, so the processing thread can stop
+    {
+        std::lock_guard<std::mutex> lock(data_ready_mutex_);
+        stopping_ = true;
+    }
+    data_ready_cv_.notify_one();
+    if (processing_thread_.joinable()) {
+        processing_thread_.join();
+    }
 }
 
 
@@ -221,8 +233,9 @@ void PeakComponent::streamDataSrvCb(const std::shared_ptr<peak_ros::srv::StreamD
     RCLCPP_INFO_STREAM(get_logger(), node_name_ << ": Streaming request received: " << request->stream_data);
     if (request->stream_data) {
         stream_ = true;
-        // Cancellable, non-blocking acquisition driven by the handler's IO thread.
-        peak_handler_.startAsyncAcquisition(nullptr, acquisition_rate_);
+        // Cancellable, non-blocking acquisition driven by the handler's IO thread, which reports each
+        // measurement so it is processed straight away
+        peak_handler_.startAsyncAcquisition([this](bool valid) { onDataReady(valid); }, acquisition_rate_);
         response->success = true;
     } else {
         stream_ = false;
@@ -475,6 +488,37 @@ void PeakComponent::populateBScanMessage(const peak_ros::msg::Observation& obs_m
 }
 
 
+void PeakComponent::onDataReady(bool /*valid*/) {
+    // Runs on the handler's IO thread, so the processing is handed to the processing thread rather than
+    // holding up the next receive
+    {
+        std::lock_guard<std::mutex> lock(data_ready_mutex_);
+        data_ready_ = true;
+    }
+    data_ready_cv_.notify_one();
+}
+
+
+void PeakComponent::processingLoop() {
+    while (true) {
+        {
+            std::unique_lock<std::mutex> lock(data_ready_mutex_);
+            data_ready_cv_.wait(lock, [this] { return data_ready_ || stopping_; });
+            if (stopping_) {
+                return;
+            }
+            data_ready_ = false;
+        }
+
+        std::lock_guard<std::mutex> lock(processing_mutex_);
+        if (stream_ && peak_handler_.getLatestData(latest_data_)) {
+            processMeasurement();
+        }
+    }
+}
+
+
+// Also consumes data while streaming, should a measurement not have been processed on arrival
 void PeakComponent::timerCb() {
     RCLCPP_INFO_STREAM_THROTTLE(get_logger(), *get_clock(), 600000, node_name_ << ": Node running");
     if (stream_) {

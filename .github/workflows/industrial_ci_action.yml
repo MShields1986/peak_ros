@@ -22,7 +22,7 @@ name: docker_ci
 on: [push, pull_request]
 
 jobs:
-  docker_build:
+  build:
     runs-on: ubuntu-latest
     steps:
       # -
@@ -31,6 +31,9 @@ jobs:
       #   with:
       #     username: ${{ vars.DOCKERHUB_USERNAME }}
       #     password: ${{ secrets.DOCKERHUB_TOKEN }}
+      -
+        name: Checkout
+        uses: actions/checkout@v4
       -
         name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -43,3 +46,13 @@ jobs:
           push: false
           # set: |
           #   *.tags=user/app:latest
+
+  integration_test:
+    runs-on: ubuntu-latest
+    steps:
+      -
+        name: Checkout
+        uses: actions/checkout@v4
+      -
+        name: Build and run integration tests
+        run: docker compose -f docker/docker-compose.yaml --profile test up --build --exit-code-from test test

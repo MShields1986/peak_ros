@@ -25,10 +25,20 @@ WORKDIR ${ROS2_WORKSPACE_DIR}
 RUN source /opt/ros/humble/setup.bash \
  && rosdep update \
  && rosdep install -i --from-path src --rosdistro humble -y \
- && colcon build --symlink-install \
+ && colcon build --symlink-install --cmake-args -DBUILD_TESTING=OFF \
  && echo "source ${ROS2_WORKSPACE_DIR}/install/setup.bash" >> /ros_entrypoint.sh
 
 RUN sed -i '/exec "$@"/d' /ros_entrypoint.sh \
  && echo 'exec "$@"' >> /ros_entrypoint.sh
 
 ENTRYPOINT [ "/ros_entrypoint.sh" ]
+
+
+##############
+# Test image #
+##############
+FROM base AS test
+
+# Build test binaries only (tests are run at container start via docker-compose command)
+RUN source /opt/ros/humble/setup.bash \
+ && colcon build --symlink-install --cmake-args -DBUILD_TESTING=ON
